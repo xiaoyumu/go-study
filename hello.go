@@ -275,6 +275,7 @@ func main() {
 	}
 
 	fmt.Println(weekdayMap)
+
 }
 
 func functionThatTakeArray(value [3]uint) {
