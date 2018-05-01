@@ -63,6 +63,30 @@ func main() {
 	fmt.Printf("Max value of intUint64:\t%d\r\n", intUint64)
 	fmt.Printf("Max value of intUint64:\t%d\r\n", uint64(math.Pow(2, 64))*2-1)
 
+	// string: UTF-8字符序列，一个unicode字符在go中的string占用不止一个字节
+	var text string
+	text = "0123456789中文"
+	fmt.Printf("Length of \"%s\" is %d \r\n", text, len(text))
+	text2 := text
+	text3 := &text
+
+	byteValue := text[3]
+	fmt.Printf("byteValue type: %s Value: %v\r\n", reflect.TypeOf(byteValue), byteValue)
+
+	byteValue = text[10]
+	fmt.Printf("byteValue type = %s Value: %v\r\n ", reflect.TypeOf(byteValue), byteValue)
+
+	fmt.Println(text)
+	fmt.Printf("Address of string text is %p \r\n", &text)
+
+	// 可以看到string变量 text2 中存储的地址与text不同
+	fmt.Println(text2)
+	fmt.Printf("Address of string text2 is %p \r\n", &text2)
+
+	// 可以看到string指针变量 text3 中存储的地址与text相同
+	fmt.Println(*text3)
+	fmt.Printf("Address of string text2 is %p \r\n", text3)
+
 	// Array and slices
 	fmt.Println()
 	fmt.Println("Array and Slice")
@@ -315,6 +339,10 @@ func (u *user) GrantPrivilege() {
 
 func (u *user) RevokePrivilege() {
 	u.privileged = false
+}
+
+func (u user) IsPrivileged() bool {
+	return u.privileged
 }
 
 func functionThatTakeArray(value [3]uint) {
