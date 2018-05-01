@@ -276,6 +276,45 @@ func main() {
 
 	fmt.Println(weekdayMap)
 
+	// Typing system go语言中的类型系统
+	var mark user // user 结构体定义在main函数的后面
+	// 按声明顺序初始化结构体的成员字段
+	mark = user{"Mark", "mark@somewhere.net", true}
+	fmt.Println(mark)
+	mark.ShowUserProfile()
+	mark.RevokePrivilege()
+	mark.ShowUserProfile()
+
+	// 结构字面量初始化结构体
+	frank := user{
+		name:       "Frank",
+		email:      "frank@somewhere.net",
+		privileged: true}
+	fmt.Println(frank)
+	frank.ShowUserProfile()
+}
+
+// 声明一个user结构类型
+type user struct {
+	name       string
+	email      string
+	privileged bool
+}
+
+// 设定了user结构体类型为接收者的方法，接收者参数 u 则是用于操作的副本。
+func (u user) ShowUserProfile() {
+	fmt.Printf("User name: %s \r\n", u.name)
+	fmt.Printf("User email: %s \r\n", u.email)
+	fmt.Printf("User is privileged: %v \r\n", u.privileged)
+}
+
+// 定义了user结构体指针类型为接收者的方法，通常用于修改结构体成员的值，接收者参数 u 则是user结构体类型的指针。
+func (u *user) GrantPrivilege() {
+	u.privileged = true
+}
+
+func (u *user) RevokePrivilege() {
+	u.privileged = false
 }
 
 func functionThatTakeArray(value [3]uint) {
