@@ -316,6 +316,35 @@ func main() {
 		privileged: true}
 	fmt.Println(frank)
 	frank.ShowUserProfile()
+
+	ct := contact{
+		name:              "Mark",
+		defaulPhoneNumber: "12312345678",
+	}
+
+	// 调用contact类型的方法list()
+	ct.list()
+
+	// 用一个map来存放不同的电话号码，和其对应的类型
+	phoneNumberList := map[string]string{
+		"1234567890001": "home",
+		"1234567890002": "office",
+		"1234567890003": "mobile",
+		"1234567890004": "mobile",
+	}
+
+	ct = contact{
+		name:              "Mark2",
+		defaulPhoneNumber: "987654321321",
+	}
+
+	// 循环map将其内容添加到联系人Mark2中
+	for phoneNumber, phoneType := range phoneNumberList {
+		ct.addPhone(phoneType, phoneNumber)
+	}
+	// 调用contact类型的方法list()
+	ct.list()
+	ct.call()
 }
 
 // 声明一个user结构类型
@@ -326,7 +355,7 @@ type user struct {
 }
 
 // 设定了user结构体类型为接收者的方法，接收者参数 u 则是用于操作的副本。
-func (u user) ShowUserProfile() {
+func (u *user) ShowUserProfile() {
 	fmt.Printf("User name: %s \r\n", u.name)
 	fmt.Printf("User email: %s \r\n", u.email)
 	fmt.Printf("User is privileged: %v \r\n", u.privileged)
