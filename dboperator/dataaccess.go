@@ -1,5 +1,8 @@
 package dboperator
 
+// 参考: http://hackthology.com/golangzhong-de-mian-xiang-dui-xiang-ji-cheng.html
+// Refer: http://hackthology.com/object-oriented-inheritance-in-go.html
+
 // ConnectionInfoContainer 定义了连接字符串的访问功能
 type ConnectionInfoContainer interface {
 	SetConnectionString(connectionStr string)
