@@ -23,7 +23,9 @@ func (c *contact) callSpecificPhoneNumber(phone phoneNumberInfo) {
 }
 
 func (c *contact) addPhone(phoneType string, phoneNumber string) phoneNumberInfo {
+	// 检查phoneNumberList是否需要初始化
 	if c.phoneNumberList == nil {
+		// 初始化一个空的phoneNumberInfo类型slice
 		c.phoneNumberList = make([]phoneNumberInfo, 0)
 	}
 	newPhoneNumberInfo := phoneNumberInfo{

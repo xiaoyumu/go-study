@@ -345,6 +345,10 @@ func main() {
 	// 调用contact类型的方法list()
 	ct.list()
 	ct.call()
+
+	// -----------------------------------
+	// Interface
+	//var con mssql.
 }
 
 // 声明一个user结构类型
