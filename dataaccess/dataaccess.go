@@ -1,4 +1,4 @@
-package dboperator
+package dataaccess // import "github.com/xiaoyumu/go-study/dataaccess"
 
 // 参考: http://hackthology.com/golangzhong-de-mian-xiang-dui-xiang-ji-cheng.html
 // Refer: http://hackthology.com/object-oriented-inheritance-in-go.html

@@ -6,6 +6,8 @@ import (
 	"reflect"
 )
 
+import da "github.com/xiaoyumu/go-study/dataaccess"
+
 // PI The const
 const PI float32 = 3.14159265
 
@@ -348,7 +350,9 @@ func main() {
 
 	// -----------------------------------
 	// Interface
-	//var con mssql.
+	con := da.ConnectionInfo{}
+	con.SetConnectionString("server=localhost;db=demodb")
+
 }
 
 // 声明一个user结构类型
