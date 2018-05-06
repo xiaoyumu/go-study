@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"runtime"
+	"time"
 )
 
 func helloHandler(writer http.ResponseWriter, requuest *http.Request) {
@@ -19,12 +20,16 @@ func helloHandler(writer http.ResponseWriter, requuest *http.Request) {
 
 }
 
+func now() string {
+	return time.Now().Format(time.RFC3339)
+}
+
 func log(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
-		fmt.Printf(">>>Hanlder function [%s] call begin\n", name)
+		fmt.Printf("[%s] >>>Hanlder function [%s] call begin\n", now(), name)
 		h(w, r)
-		fmt.Printf("<<<Hanlder function [%s] call finished\n", name)
+		fmt.Printf("[%s] <<<Hanlder function [%s] call finished\n", now(), name)
 	}
 }
 
