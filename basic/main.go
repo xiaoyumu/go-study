@@ -6,8 +6,6 @@ import (
 	"reflect"
 )
 
-import da "github.com/xiaoyumu/go-study/dataaccess"
-
 // PI The const
 const PI float32 = 3.14159265
 
@@ -347,11 +345,6 @@ func main() {
 	// 调用contact类型的方法list()
 	ct.list()
 	ct.call()
-
-	// -----------------------------------
-	// Interface
-	con := da.ConnectionInfo{}
-	con.SetConnectionString("server=localhost;db=demodb")
 
 }
 

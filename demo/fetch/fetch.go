@@ -11,11 +11,11 @@ func main() {
 	// The first element in os.Args is the full path of the program itself.
 	// So we start to pick args from os.Args[1]
 	for _, url := range os.Args[1:] {
-		fetchUrl(url)
+		fetchURL(url)
 	}
 }
 
-func fetchUrl(url string) {
+func fetchURL(url string) {
 	fmt.Fprintln(os.Stdout, "Requesting : "+url)
 
 	// According to the implemention of http.Get(url), when err != nil
