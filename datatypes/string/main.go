@@ -31,4 +31,24 @@ func main() {
 	if !strings.Contains(stringValue, subStringValue2) {
 		fmt.Printf("\"%s\" does not contain \"%s\"\n", stringValue, subStringValue2)
 	}
+
+	subStringIndex := strings.Index("abcdef", "cde")
+
+	// fmt.Sprintf(format, args) equal to string.Format(format, args) in C#
+	fmt.Println(fmt.Sprintf("The index of string 'cde' in 'abcdef' is %d", subStringIndex))
+
+	const useageMessage = `Usage:
+	command [options] [flags]`
+
+	fmt.Println(useageMessage)
+	fmt.Println(addThousandSeperator("1233456789"))
+}
+
+// Append thousand seperators into the value string
+func addThousandSeperator(value string) string {
+	length := len(value)
+	if length <= 3 {
+		return value
+	}
+	return addThousandSeperator(value[:length-3]) + "," + value[length-3:]
 }
