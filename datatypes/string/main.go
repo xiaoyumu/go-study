@@ -42,6 +42,16 @@ func main() {
 
 	fmt.Println(useageMessage)
 	fmt.Println(addThousandSeperator("1233456789"))
+
+	var valueForFieldTest string
+	valueForFieldTest = "This is for field test"
+	fieldResult := strings.Fields(valueForFieldTest)
+	fmt.Printf("strings.Field(\"%s\") returns %v of type %T\n", valueForFieldTest, fieldResult, fieldResult)
+
+	for _, value := range fieldResult {
+		fmt.Println(value)
+	}
+
 }
 
 // Append thousand seperators into the value string
