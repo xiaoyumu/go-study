@@ -58,11 +58,7 @@ type TreeNode struct {
 }
 
 func depthFirstTraval(root *TreeNode, action func(*TreeNode)) {
-	if root == nil {
-		return
-	}
-
-	if action == nil {
+	if root == nil || action == nil {
 		return
 	}
 
