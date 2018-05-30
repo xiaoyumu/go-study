@@ -19,8 +19,6 @@ func CreateQueue() *Queue {
 }
 
 func (q *Queue) enqueue(e interface{}) {
-	//q.elements = append(q.elements, e)
-
 	q.elements = append(q.elements, e)
 	q.size++
 
