@@ -2,7 +2,15 @@ package main
 
 import "fmt"
 
-func main() {
+// Build a tree that has structure as following
+//                A
+//           /    |   \
+//         /      |     \
+//        B       C       D
+//     /  | \    / \     / | \
+//    E   F  G  H   I   J  K  L
+func buildTree() *TreeNode {
+
 	root := TreeNode{
 		Name: "A",
 		Children: []TreeNode{
@@ -46,36 +54,30 @@ func main() {
 		},
 	}
 
+	return &root
+}
+
+func main() {
+
+	root := buildTree()
 	fmt.Println("Depth First Search by recursive call (System Stack):")
 	fmt.Print("  PreOrder:  ")
 	root.PreOrderTraval(func(root *TreeNode) { fmt.Printf("%s ", (*root).Name) })
 
 	fmt.Println()
 	fmt.Print("  PostOrder: ")
-	root.PostOrderTraval(func(root *TreeNode) { fmt.Printf("%s ", (*root).Name) })
+	root.PostOrderTraval(showNode)
 
 	fmt.Println()
 
 	fmt.Print("Broad First Seach: ")
-	root.BoradFirstSearch(func(root *TreeNode) { fmt.Printf("%s ", (*root).Name) })
+	root.BoradFirstSearch(showNode)
 	fmt.Println()
 
-	stack := CreateStack()
+	fmt.Print("Depth First Seach (By simulated stack): ")
+	root.DepthFirstSearch(showNode)
+}
 
-	listValue := []int{1, 2, 3, 4, 5, 6}
-
-	for i := 0; i < len(listValue); i++ {
-		stack.Push(&listValue[i])
-	}
-
-	for !stack.isEmpty() {
-		v, err := stack.Pop()
-		if err != nil {
-			panic(err)
-		}
-
-		value := v.(*int)
-		fmt.Print(*value)
-	}
-	fmt.Println()
+func showNode(root *TreeNode) {
+	fmt.Printf("%s ", (*root).Name)
 }

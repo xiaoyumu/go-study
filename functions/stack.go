@@ -40,7 +40,7 @@ func (s *Stack) Pop() (interface{}, error) {
 }
 
 // IsEmpty method check if the stack s contains any element
-func (s *Stack) isEmpty() bool {
+func (s *Stack) IsEmpty() bool {
 	if s == nil {
 		return true
 	}

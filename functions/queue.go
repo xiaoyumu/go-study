@@ -18,13 +18,15 @@ func CreateQueue() *Queue {
 	}
 }
 
-func (q *Queue) enqueue(e interface{}) {
+// Enqueue puts an element into the queue tail
+func (q *Queue) Enqueue(e interface{}) {
 	q.elements = append(q.elements, e)
 	q.size++
 
 }
 
-func (q *Queue) dequeue() (interface{}, error) {
+// Dequeue gets an element from the queue head, and remove it from queue
+func (q *Queue) Dequeue() (interface{}, error) {
 	if len(q.elements) == 0 {
 		return nil, errors.New("No more elements in this queue")
 	}
@@ -36,7 +38,8 @@ func (q *Queue) dequeue() (interface{}, error) {
 	return head, nil
 }
 
-func (q *Queue) isEmpty() bool {
+// IsEmpty checks if the queue is empty.
+func (q *Queue) IsEmpty() bool {
 	if q == nil {
 		return true
 	}

@@ -6,6 +6,15 @@ type TreeNode struct {
 	Children []TreeNode
 }
 
+func (root *TreeNode) hasChildren() bool {
+	if root == nil {
+		return true
+	}
+	return len(root.Children) > 0
+}
+
+// PreOrderTraval is a Recursive implementation of depth first search
+// Which visit the root node first
 func (root *TreeNode) PreOrderTraval(action func(*TreeNode)) {
 	if root == nil || action == nil {
 		return
@@ -22,6 +31,8 @@ func (root *TreeNode) PreOrderTraval(action func(*TreeNode)) {
 	}
 }
 
+// PostOrderTraval is a Recursive implementation of depth first search
+// Which visit the root node after all the child nodes
 func (root *TreeNode) PostOrderTraval(action func(*TreeNode)) {
 	if root == nil || action == nil {
 		return
@@ -36,6 +47,41 @@ func (root *TreeNode) PostOrderTraval(action func(*TreeNode)) {
 	action(root)
 }
 
+// DepthFirstSearch is a general implementation based on stack
+func (root *TreeNode) DepthFirstSearch(action func(*TreeNode)) {
+	if root == nil || action == nil {
+		return
+	}
+
+	// Create a stack
+	stack := CreateStack()
+
+	stack.Push(root)
+
+	for !stack.IsEmpty() {
+		element, err := stack.Pop()
+		if err != nil {
+			panic(err)
+		}
+		node := element.(*TreeNode)
+
+		// Call the action method with current node
+		action(node)
+
+		// If the node is a leaf node, move on to the next node in the stack
+		if !node.hasChildren() {
+			continue
+		}
+
+		// Backward pushing children nodes of current node into stack
+		// Make the node order the same as preorder traversal
+		for i := len(node.Children) - 1; i >= 0; i-- {
+			stack.Push(&node.Children[i])
+		}
+	}
+}
+
+// BoradFirstSearch of the given tree
 func (root *TreeNode) BoradFirstSearch(action func(*TreeNode)) {
 	if root == nil || action == nil {
 		return
@@ -44,12 +90,12 @@ func (root *TreeNode) BoradFirstSearch(action func(*TreeNode)) {
 	queue := CreateQueue()
 
 	// Enqueue the root node
-	queue.enqueue(root)
+	queue.Enqueue(root)
 
-	for !queue.isEmpty() {
+	for !queue.IsEmpty() {
 		var node *TreeNode
 		// Dequeue an element from the queue
-		element, err := queue.dequeue()
+		element, err := queue.Dequeue()
 
 		// err will contains value if queue is empty
 		if err != nil {
@@ -69,14 +115,7 @@ func (root *TreeNode) BoradFirstSearch(action func(*TreeNode)) {
 
 		// Enqueue all children of the current node.
 		for i := 0; i < len(node.Children); i++ {
-			queue.enqueue(&node.Children[i])
+			queue.Enqueue(&node.Children[i])
 		}
 	}
-}
-
-func (root *TreeNode) hasChildren() bool {
-	if root == nil {
-		return true
-	}
-	return len(root.Children) > 0
 }
