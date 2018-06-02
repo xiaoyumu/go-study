@@ -1,12 +1,16 @@
-package datastructure
+package tree
 
-// TreeNode struct represent a general tree structure
-type TreeNode struct {
+import (
+	"github.com/xiaoyumu/go-study/datastructure"
+)
+
+// Node struct represent a Node element in general tree structure
+type Node struct {
 	Name     string
-	Children []TreeNode
+	Children []Node
 }
 
-func (root *TreeNode) hasChildren() bool {
+func (root *Node) hasChildren() bool {
 	if root == nil {
 		return true
 	}
@@ -15,7 +19,7 @@ func (root *TreeNode) hasChildren() bool {
 
 // PreOrderTraval is a Recursive implementation of depth first search
 // Which visit the root node first
-func (root *TreeNode) PreOrderTraval(action func(*TreeNode)) {
+func (root *Node) PreOrderTraval(action func(*Node)) {
 	if root == nil || action == nil {
 		return
 	}
@@ -33,7 +37,7 @@ func (root *TreeNode) PreOrderTraval(action func(*TreeNode)) {
 
 // PostOrderTraval is a Recursive implementation of depth first search
 // Which visit the root node after all the child nodes
-func (root *TreeNode) PostOrderTraval(action func(*TreeNode)) {
+func (root *Node) PostOrderTraval(action func(*Node)) {
 	if root == nil || action == nil {
 		return
 	}
@@ -48,13 +52,13 @@ func (root *TreeNode) PostOrderTraval(action func(*TreeNode)) {
 }
 
 // DepthFirstSearch is a general implementation based on stack
-func (root *TreeNode) DepthFirstSearch(action func(*TreeNode)) {
+func (root *Node) DepthFirstSearch(action func(*Node)) {
 	if root == nil || action == nil {
 		return
 	}
 
 	// Create a stack
-	stack := CreateStack()
+	stack := datastructure.CreateStack()
 
 	stack.Push(root)
 
@@ -63,7 +67,7 @@ func (root *TreeNode) DepthFirstSearch(action func(*TreeNode)) {
 		if err != nil {
 			panic(err)
 		}
-		node := element.(*TreeNode)
+		node := element.(*Node)
 
 		// Call the action method with current node
 		action(node)
@@ -82,18 +86,18 @@ func (root *TreeNode) DepthFirstSearch(action func(*TreeNode)) {
 }
 
 // BoradFirstSearch of the given tree
-func (root *TreeNode) BoradFirstSearch(action func(*TreeNode)) {
+func (root *Node) BoradFirstSearch(action func(*Node)) {
 	if root == nil || action == nil {
 		return
 	}
 	// Create a queue
-	queue := CreateQueue()
+	queue := datastructure.CreateQueue()
 
 	// Enqueue the root node
 	queue.Enqueue(root)
 
 	for !queue.IsEmpty() {
-		var node *TreeNode
+		var node *Node
 		// Dequeue an element from the queue
 		element, err := queue.Dequeue()
 
@@ -102,8 +106,8 @@ func (root *TreeNode) BoradFirstSearch(action func(*TreeNode)) {
 			panic(err)
 		}
 
-		// Assert and Convert type of the element into *TreeNode
-		node = element.(*TreeNode)
+		// Assert and Convert type of the element into *Node
+		node = element.(*Node)
 
 		// Perform the action on node
 		action(node)
