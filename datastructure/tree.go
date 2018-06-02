@@ -1,4 +1,4 @@
-package main
+package datastructure
 
 // TreeNode struct represent a general tree structure
 type TreeNode struct {
@@ -114,7 +114,7 @@ func (root *TreeNode) BoradFirstSearch(action func(*TreeNode)) {
 		}
 
 		// Enqueue all children of the current node.
-		for i := 0; i < len(node.Children); i++ {
+		for i := range node.Children {
 			queue.Enqueue(&node.Children[i])
 		}
 	}
