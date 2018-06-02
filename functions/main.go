@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/xiaoyumu/go-study/datastructure/tree"
+)
 
 // Build a tree that has structure as following
 //                A
@@ -9,45 +13,45 @@ import "fmt"
 //        B       C       D
 //     /  | \    / \     / | \
 //    E   F  G  H   I   J  K  L
-func buildTree() *TreeNode {
+func buildTree() *tree.Node {
 
-	root := TreeNode{
+	root := tree.Node{
 		Name: "A",
-		Children: []TreeNode{
-			TreeNode{
+		Children: []tree.Node{
+			tree.Node{
 				Name: "B",
-				Children: []TreeNode{
-					TreeNode{
+				Children: []tree.Node{
+					tree.Node{
 						Name: "E",
 					},
-					TreeNode{
+					tree.Node{
 						Name: "F",
 					},
-					TreeNode{
+					tree.Node{
 						Name: "G",
 					},
 				},
 			},
-			TreeNode{
+			tree.Node{
 				Name: "C",
-				Children: []TreeNode{
-					TreeNode{
+				Children: []tree.Node{
+					tree.Node{
 						Name: "H",
 					},
-					TreeNode{
+					tree.Node{
 						Name: "I",
 					},
 				}},
-			TreeNode{
+			tree.Node{
 				Name: "D",
-				Children: []TreeNode{
-					TreeNode{
+				Children: []tree.Node{
+					tree.Node{
 						Name: "J",
 					},
-					TreeNode{
+					tree.Node{
 						Name: "K",
 					},
-					TreeNode{
+					tree.Node{
 						Name: "L",
 					},
 				}},
@@ -62,7 +66,7 @@ func main() {
 	root := buildTree()
 	fmt.Println("Depth First Search by recursive call (System Stack):")
 	fmt.Print("  PreOrder:  ")
-	root.PreOrderTraval(func(root *TreeNode) { fmt.Printf("%s ", (*root).Name) })
+	root.PreOrderTraval(func(root *tree.Node) { fmt.Printf("%s ", (*root).Name) })
 
 	fmt.Println()
 	fmt.Print("  PostOrder: ")
@@ -78,6 +82,6 @@ func main() {
 	root.DepthFirstSearch(showNode)
 }
 
-func showNode(root *TreeNode) {
+func showNode(root *tree.Node) {
 	fmt.Printf("%s ", (*root).Name)
 }
