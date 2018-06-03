@@ -346,6 +346,9 @@ func main() {
 	ct.list()
 	ct.call()
 
+	forLoopAsWhile()
+	forLoopAsIteration()
+	forLoopAsIterationForIndexOnly()
 }
 
 // 声明一个user结构类型
