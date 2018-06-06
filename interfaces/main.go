@@ -5,7 +5,9 @@ import (
 	"math"
 )
 
-type ShapeAreaCalculator interface {
+// The Shape interface represents an object that can calculate area
+// output its name, and transform into display string.
+type Shape interface {
 	GetArea() float64
 	Name() string
 	ToDisplayString() string
@@ -17,7 +19,7 @@ type triangle struct {
 	height float64
 }
 
-// Following functions are the implementation of interface ShapeAreaCalculator
+// Following functions are the implementation of interface Shape
 // for type triangle
 func (s *triangle) GetArea() float64 {
 	return s.bottom * s.height / 2
@@ -35,7 +37,7 @@ type circle struct {
 	radius float64
 }
 
-// Following functions are the implementation of interface ShapeAreaCalculator
+// Following functions are the implementation of interface Shape
 // for type circle
 func (s *circle) GetArea() float64 {
 	return math.Pi * s.radius * s.radius
@@ -54,7 +56,7 @@ type rectangle struct {
 	width  float64
 }
 
-// Following functions are the implementation of interface ShapeAreaCalculator
+// Following functions are the implementation of interface Shape
 // for type rectangle
 func (s *rectangle) GetArea() float64 {
 	return s.length * s.width
@@ -72,7 +74,7 @@ type square struct {
 	width float64
 }
 
-// Following functions are the implementation of interface ShapeAreaCalculator
+// Following functions are the implementation of interface Shape
 // for type square
 func (s *square) GetArea() float64 {
 	return s.width * s.width
@@ -88,10 +90,10 @@ func (s *square) ToDisplayString() string {
 
 func main() {
 
-	shapes := []ShapeAreaCalculator{}
+	shapes := []Shape{}
 
 	// Why we can use the address of a specific typed struct that
-	// implements ShapeAreaCalculator interface
+	// implements Shape interface
 	s1 := &triangle{bottom: 10, height: 8}
 	s2 := &circle{radius: 8}
 	s3 := &rectangle{length: 12, width: 5}
@@ -102,10 +104,10 @@ func main() {
 	sumShapeArea(shapes)
 }
 
-// Since we use ShapeAreaCalculator interface as the representation of a shape for the
-// method, any struct that implements ShapeAreaCalculator interface can be used in this
+// Since we use Shape interface as the representation of a shape for the
+// method, any struct that implements Shape interface can be used in this
 // method. When adding new shape, this method will also work without any change.
-func sumShapeArea(shapes []ShapeAreaCalculator) {
+func sumShapeArea(shapes []Shape) {
 	var sumOfArea float64
 	for _, shape := range shapes {
 		area := shape.GetArea()
