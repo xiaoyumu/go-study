@@ -17,6 +17,8 @@ type triangle struct {
 	height float64
 }
 
+// Following functions are the implementation of interface ShapeAreaCalculator
+// for type triangle
 func (s *triangle) GetArea() float64 {
 	return s.bottom * s.height / 2
 }
@@ -33,6 +35,8 @@ type circle struct {
 	radius float64
 }
 
+// Following functions are the implementation of interface ShapeAreaCalculator
+// for type circle
 func (s *circle) GetArea() float64 {
 	return math.Pi * s.radius * s.radius
 }
@@ -50,6 +54,8 @@ type rectangle struct {
 	width  float64
 }
 
+// Following functions are the implementation of interface ShapeAreaCalculator
+// for type rectangle
 func (s *rectangle) GetArea() float64 {
 	return s.length * s.width
 }
@@ -66,6 +72,8 @@ type square struct {
 	width float64
 }
 
+// Following functions are the implementation of interface ShapeAreaCalculator
+// for type square
 func (s *square) GetArea() float64 {
 	return s.width * s.width
 }
@@ -79,8 +87,11 @@ func (s *square) ToDisplayString() string {
 }
 
 func main() {
+
 	shapes := []ShapeAreaCalculator{}
 
+	// Why we can use the address of a specific typed struct that
+	// implements ShapeAreaCalculator interface
 	s1 := &triangle{bottom: 10, height: 8}
 	s2 := &circle{radius: 8}
 	s3 := &rectangle{length: 12, width: 5}
