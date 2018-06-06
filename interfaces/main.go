@@ -88,10 +88,22 @@ func main() {
 
 	shapes = append(shapes, s1, s2, s3, s4)
 
+	sumShapeArea(shapes)
+}
+
+// Since we use ShapeAreaCalculator interface as the representation of a shape for the
+// method, any struct that implements ShapeAreaCalculator interface can be used in this
+// method. When adding new shape, this method will also work without any change.
+func sumShapeArea(shapes []ShapeAreaCalculator) {
+	var sumOfArea float64
 	for _, shape := range shapes {
-		fmt.Printf("  %s area (%s) = %v\n",
+		area := shape.GetArea()
+		sumOfArea += area
+		fmt.Printf("  Area of %s \t(%s) = %v\n",
 			shape.Name(),
 			shape.ToDisplayString(),
-			shape.GetArea())
+			area)
 	}
+
+	fmt.Printf("The sum of area of %d shapes are %v\n", len(shapes), sumOfArea)
 }
