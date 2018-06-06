@@ -62,14 +62,31 @@ func (s *rectangle) ToDisplayString() string {
 	return fmt.Sprintf("%v * %v", s.length, s.width)
 }
 
+type square struct {
+	width float64
+}
+
+func (s *square) GetArea() float64 {
+	return s.width * s.width
+}
+
+func (s *square) Name() string {
+	return "Square"
+}
+
+func (s *square) ToDisplayString() string {
+	return fmt.Sprintf("%v * %v", s.width, s.width)
+}
+
 func main() {
 	shapes := []ShapeAreaCalculator{}
 
 	s1 := &triangle{bottom: 10, height: 8}
 	s2 := &circle{radius: 8}
 	s3 := &rectangle{length: 12, width: 5}
+	s4 := &square{width: 5}
 
-	shapes = append(shapes, s1, s2, s3)
+	shapes = append(shapes, s1, s2, s3, s4)
 
 	for _, shape := range shapes {
 		fmt.Printf("  %s area (%s) = %v\n",
