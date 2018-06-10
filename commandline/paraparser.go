@@ -85,3 +85,11 @@ func (p *ParameterPool) GetParameterValueString(name string, defaultValue string
 
 	return value
 }
+
+// DumpParameters write all parameters along with its values to log from the ParameterPool
+func (p *ParameterPool) DumpParameters() {
+	log.Printf("Dumping parameters from the pool...")
+	for parameterName, parameterValue := range p.parameters {
+		log.Printf("(ParaParser) Parameter: %s = %s", parameterName, parameterValue)
+	}
+}
