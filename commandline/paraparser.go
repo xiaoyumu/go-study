@@ -89,7 +89,18 @@ func (p *ParameterPool) GetParameterValueString(name string, defaultValue string
 // DumpParameters write all parameters along with its values to log from the ParameterPool
 func (p *ParameterPool) DumpParameters() {
 	log.Printf("Dumping parameters from the pool...")
-	for parameterName, parameterValue := range p.parameters {
+	p.Iterate(func(parameterName string, parameterValue string) {
 		log.Printf("(ParaParser) Parameter: %s = %s", parameterName, parameterValue)
+	})
+}
+
+// Iterate parameter pool and retrieve all parameter name and its value
+func (p *ParameterPool) Iterate(action func(string, string)) {
+	if action == nil {
+		return
+	}
+
+	for parameterName, parameterValue := range p.parameters {
+		action(parameterName, parameterValue)
 	}
 }
