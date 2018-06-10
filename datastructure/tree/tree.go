@@ -85,8 +85,8 @@ func (root *Node) DepthFirstSearch(action func(*Node)) {
 	}
 }
 
-// BoradFirstSearch of the given tree
-func (root *Node) BoradFirstSearch(action func(*Node)) {
+// BreadthFirstSearch of the given tree
+func (root *Node) BreadthFirstSearch(action func(*Node)) {
 	if root == nil || action == nil {
 		return
 	}
