@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"github.com/xiaoyumu/go-study/commandline"
@@ -16,11 +18,11 @@ const DefaultHost string = "localhost"
 const DefaultPort string = "8000"
 
 func main() {
-	pool := commandline.Create()
-	clock(getHostAndPort(pool))
+	pool := commandline.CreateDefault()
+	clock(getClockSetting(pool))
 }
 
-func clock(host string, port string) {
+func clock(name string, host string, port string) {
 	log.Print("Starting single connection clock ...")
 	endpoint := host + ":" + port
 	linstener, err := net.Listen("tcp", endpoint)
@@ -39,17 +41,17 @@ func clock(host string, port string) {
 
 		log.Printf("Connection from %s was accepted.", conn.RemoteAddr())
 
-		go handleConnection(conn)
+		go handleConnection(name, conn)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(name string, conn net.Conn) {
 	remoteAddr := conn.RemoteAddr().String()
 	defer conn.Close()
 	defer func() { log.Printf("Connection from %s was closed.", remoteAddr) }()
 	for {
-		log.Printf("Sending back current time to %s", remoteAddr)
-		_, err := io.WriteString(conn, time.Now().Format(time.RFC3339+"\n"))
+		log.Printf("Sending back current time to %s for clock [%s]", remoteAddr, name)
+		_, err := io.WriteString(conn, fmt.Sprintf("[%s] %s\n", name, time.Now().Format(time.RFC3339)))
 		if err != nil {
 			return
 		}
@@ -60,7 +62,8 @@ func handleConnection(conn net.Conn) {
 const parameterNameHost string = "host"
 const parameterNamePort string = "port"
 
-func getHostAndPort(pool *commandline.ParameterPool) (string, string) {
-	return pool.GetParameterValueString(parameterNameHost, DefaultHost),
+func getClockSetting(pool *commandline.ParameterPool) (string, string, string) {
+	return pool.GetParameterValueString("name", "Clock-"+os.Getenv("TZ")),
+		pool.GetParameterValueString(parameterNameHost, DefaultHost),
 		pool.GetParameterValueString(parameterNamePort, DefaultPort)
 }
