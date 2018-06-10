@@ -6,35 +6,47 @@ import (
 	"strings"
 )
 
+// DefaultParameterPrefix identify the parameter in os.Args slice
+const DefaultParameterPrefix = "-"
+
+// DefaultNameValueDelimiter separates the name and value from
+// a command line paramter, default is :
+const DefaultNameValueDelimiter string = ":"
+
+const minimumDelimiterIndex = 2
+
 // ParameterPool contains the command line parameters
 type ParameterPool struct {
 	parameters map[string]string
 }
 
-// Create the ParameterPool instance and return the pointer
-func Create() *ParameterPool {
+// CreateDefault the ParameterPool instance and return the pointer
+// with default parameter prefix and delimiter
+func CreateDefault() *ParameterPool {
+	return Create(DefaultParameterPrefix, DefaultNameValueDelimiter)
+}
+
+// Create the ParameterPool instance and return the pointer with
+// given parameter prefix and delimiter
+func Create(prefix string, delimiter string) *ParameterPool {
 	pool := ParameterPool{
-		parameters: getParameters(),
+		parameters: getParameters(prefix, delimiter),
 	}
 
 	return &pool
 }
 
 // The first arg of os.Args is the program itself.
-func getParameters() map[string]string {
-
-	const argumentPrefix = "-"
-	const nameValueDelimiter string = ":"
-	const minimumDelimiterIndex = 2
+func getParameters(prefix string, delimiter string) map[string]string {
 
 	parameterPool := make(map[string]string)
 
 	for _, arg := range os.Args[1:] {
-		if !strings.HasPrefix(arg, argumentPrefix) {
+		if !strings.HasPrefix(arg, prefix) {
 			continue
 		}
 
-		nameValueDelimiterIndex := strings.Index(arg, nameValueDelimiter)
+		nameValueDelimiterIndex := strings.Index(arg, delimiter)
 
 		// The parameter should be like -h:somehost
 		// so the minimum index of the name value delimiter should be at
