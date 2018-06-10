@@ -32,15 +32,16 @@ func clock() {
 
 		log.Printf("Connection from %s was accepted.", conn.RemoteAddr())
 
-		handleConnection(conn)
+		go handleConnection(conn)
 	}
 }
 
 func handleConnection(conn net.Conn) {
+	remoteAddr := conn.RemoteAddr().String()
 	defer conn.Close()
-	defer func() { log.Print("Connection closed.") }()
+	defer func() { log.Printf("Connection from %s was closed.", remoteAddr) }()
 	for {
-		log.Print("Sending back current time.")
+		log.Printf("Sending back current time to %s", remoteAddr)
 		_, err := io.WriteString(conn, time.Now().Format(time.RFC3339+"\n"))
 		if err != nil {
 			return
