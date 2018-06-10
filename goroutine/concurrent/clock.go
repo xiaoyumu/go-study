@@ -5,16 +5,23 @@ import (
 	"log"
 	"net"
 	"time"
+
+	"github.com/xiaoyumu/go-study/commandline"
 )
 
+// DefaultHost for clock server to listen
+const DefaultHost string = "localhost"
+
+// DefaultPort for clock server to listen
+const DefaultPort string = "8000"
+
 func main() {
-	clock()
+	pool := commandline.Create()
+	clock(getHostAndPort(pool))
 }
 
-func clock() {
+func clock(host string, port string) {
 	log.Print("Starting single connection clock ...")
-	host := "localhost"
-	port := "8000"
 	endpoint := host + ":" + port
 	linstener, err := net.Listen("tcp", endpoint)
 	log.Printf("Listening on %s", endpoint)
@@ -48,4 +55,12 @@ func handleConnection(conn net.Conn) {
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+const parameterNameHost string = "host"
+const parameterNamePort string = "port"
+
+func getHostAndPort(pool *commandline.ParameterPool) (string, string) {
+	return pool.GetParameterValueString(parameterNameHost, DefaultHost),
+		pool.GetParameterValueString(parameterNamePort, DefaultPort)
 }
