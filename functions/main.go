@@ -74,8 +74,8 @@ func main() {
 
 	fmt.Println()
 
-	fmt.Print("Broad First Seach: ")
-	root.BoradFirstSearch(showNode)
+	fmt.Print("Breadth First Seach: ")
+	root.BreadthFirstSearch(showNode)
 	fmt.Println()
 
 	fmt.Print("Depth First Seach (By simulated stack): ")
