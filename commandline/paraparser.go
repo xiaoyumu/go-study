@@ -77,7 +77,7 @@ func (p *ParameterPool) GetParameterValueString(name string, defaultValue string
 
 	var value string
 	if parameterValue, exists := p.parameters[name]; !exists {
-		log.Printf("%s was not found, using default value %s", name, defaultValue)
+		log.Printf("(ParaParser) Parameter [%s] was not found, using default value [%s]", name, defaultValue)
 		value = defaultValue
 	} else {
 		value = parameterValue
