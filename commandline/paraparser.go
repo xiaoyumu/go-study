@@ -104,3 +104,8 @@ func (p *ParameterPool) Iterate(action func(string, string)) {
 		action(parameterName, parameterValue)
 	}
 }
+
+// Count how mange parameters in the pool
+func (p *ParameterPool) Count() int {
+	return len(p.parameters)
+}
