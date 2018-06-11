@@ -25,18 +25,18 @@ type ParameterPool struct {
 // ParameterParseSetting contains setting that used
 // while parsing command line parameters
 type ParameterParseSetting struct {
-	prefix                   string
-	delimiter                string
-	requiredParameters       []string
-	actionOnValidationFailed func() // When parameter validation failed, the action will be executed.
+	Prefix                   string
+	Delimiter                string
+	RequiredParameters       []string
+	ActionOnValidationFailed func() // When parameter validation failed, the action will be executed.
 }
 
 // CreateDefault the ParameterPool instance and return the pointer
 // with default parameter prefix and delimiter
 func CreateDefault() (*ParameterPool, error) {
 	return Create(&ParameterParseSetting{
-		prefix:    DefaultParameterPrefix,
-		delimiter: DefaultNameValueDelimiter,
+		Prefix:    DefaultParameterPrefix,
+		Delimiter: DefaultNameValueDelimiter,
 	})
 }
 
@@ -47,23 +47,23 @@ func Create(s *ParameterParseSetting) (*ParameterPool, error) {
 		panic("parameter s cannot be nil while creating a ParameterPool")
 	}
 
-	if len(s.prefix) <= 0 {
-		s.prefix = DefaultParameterPrefix
+	if len(s.Prefix) <= 0 {
+		s.Prefix = DefaultParameterPrefix
 	}
 
-	if len(s.delimiter) <= 0 {
-		s.delimiter = DefaultNameValueDelimiter
+	if len(s.Delimiter) <= 0 {
+		s.Delimiter = DefaultNameValueDelimiter
 	}
 
 	pool := ParameterPool{
-		parameters: getParameters(s.prefix, s.delimiter),
+		parameters: getParameters(s.Prefix, s.Delimiter),
 		setting:    s,
 	}
 
 	err := pool.validate()
 	if err != nil {
-		if s.actionOnValidationFailed != nil {
-			s.actionOnValidationFailed()
+		if s.ActionOnValidationFailed != nil {
+			s.ActionOnValidationFailed()
 		}
 
 		return nil, err
@@ -75,11 +75,11 @@ func Create(s *ParameterParseSetting) (*ParameterPool, error) {
 func (p *ParameterPool) validate() error {
 	// If no required parameter specified
 	// just skip the validation
-	if len(p.setting.requiredParameters) <= 0 {
+	if len(p.setting.RequiredParameters) <= 0 {
 		return nil
 	}
 
-	for _, requiredParameter := range p.setting.requiredParameters {
+	for _, requiredParameter := range p.setting.RequiredParameters {
 		if !p.HasParameter(requiredParameter) {
 			return fmt.Errorf("the parameter %s is required, but not present", requiredParameter)
 		}
