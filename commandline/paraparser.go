@@ -31,6 +31,11 @@ type ParameterParseSetting struct {
 	ActionOnValidationFailed func() // When parameter validation failed, the action will be executed.
 }
 
+// ParameterError contains multiple parameter validation errors
+type ParameterError struct {
+	errors []string
+}
+
 // CreateDefault the ParameterPool instance and return the pointer
 // with default parameter prefix and delimiter
 func CreateDefault() (*ParameterPool, error) {
@@ -79,12 +84,19 @@ func (p *ParameterPool) validate() error {
 		return nil
 	}
 
+	parameterError := ParameterError{
+		errors: []string{},
+	}
 	for _, requiredParameter := range p.setting.RequiredParameters {
 		if !p.HasParameter(requiredParameter) {
-			return fmt.Errorf("the parameter %s is required, but not present", requiredParameter)
+			parameterError.appendError(
+				fmt.Sprintf("the parameter %s is required, but not present", requiredParameter))
 		}
 	}
 
+	if parameterError.HasError() {
+		return parameterError
+	}
 	return nil
 }
 
@@ -171,4 +183,23 @@ func (p *ParameterPool) HasParameter(name string) bool {
 	}
 
 	return false
+}
+
+func (e ParameterError) Error() string {
+	errorMessages := make([]string, len(e.errors))
+
+	for i, err := range e.errors {
+		errorMessages[i] = err
+	}
+
+	return strings.Join(errorMessages, "\n")
+}
+
+// HasError checks if the ParameterError has any error
+func (e *ParameterError) HasError() bool {
+	return len(e.errors) > 0
+}
+
+func (e *ParameterError) appendError(errMsg string) {
+	e.errors = append(e.errors, errMsg)
 }
