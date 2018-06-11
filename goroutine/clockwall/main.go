@@ -13,7 +13,11 @@ import (
 )
 
 func main() {
-	pool := commandline.CreateDefault()
+	pool, err := commandline.CreateDefault()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	//pool.DumpParameters()
 
 	clockHosts := make([]string, pool.Count())

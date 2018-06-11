@@ -18,7 +18,12 @@ const DefaultHost string = "localhost"
 const DefaultPort string = "8000"
 
 func main() {
-	pool := commandline.CreateDefault()
+	pool, err := commandline.CreateDefault()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	clock(getClockSetting(pool))
 }
 
