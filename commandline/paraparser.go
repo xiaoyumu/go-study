@@ -46,6 +46,15 @@ func Create(s *ParameterParseSetting) (*ParameterPool, error) {
 	if s == nil {
 		panic("parameter s cannot be nil while creating a ParameterPool")
 	}
+
+	if len(s.prefix) <= 0 {
+		s.prefix = DefaultParameterPrefix
+	}
+
+	if len(s.delimiter) <= 0 {
+		s.delimiter = DefaultNameValueDelimiter
+	}
+
 	pool := ParameterPool{
 		parameters: getParameters(s.prefix, s.delimiter),
 		setting:    s,
