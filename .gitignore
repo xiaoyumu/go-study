@@ -12,5 +12,15 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# Ignore debug binaries
 debug
+
 .vscode/
+
+# govendor cache
+.cache
+
+# ignore vendor packages
+src/app/vendor/*
+!src/app/vendor/vendor.json
