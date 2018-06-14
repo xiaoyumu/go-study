@@ -22,5 +22,6 @@ debug
 .cache
 
 # ignore vendor packages
+vendor/
 src/app/vendor/*
 !src/app/vendor/vendor.json

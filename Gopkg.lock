@@ -2,10 +2,28 @@
 
 
 [[projects]]
+  name = "github.com/coreos/etcd"
+  packages = ["client","pkg/pathutil","pkg/srv","pkg/types","version"]
+  revision = "56536de5511128d0c7997aa2b792a4de575da536"
+  version = "v3.3.7"
+
+[[projects]]
+  name = "github.com/coreos/go-semver"
+  packages = ["semver"]
+  revision = "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
+  version = "v0.2.0"
+
+[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/ugorji/go"
+  packages = ["codec"]
+  revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
+  version = "v1.1.1"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -16,6 +34,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "714ea508b74c96cca7230568cb19bac8cb14719312298add5ffedd390410353e"
+  inputs-digest = "0c5474d5213c75864bbcc1820f7bdaf86e2fb72971ddfb037fb72f74d7e255e8"
   solver-name = "gps-cdcl"
   solver-version = 1
