@@ -33,28 +33,47 @@ func main() {
 
 	bucket := openBucket()
 
+	defer bucket.Close()
+
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	// Routes
-	e.GET("/api", getAPIDoc(bucket))
-
-	e.POST("/api", createAPIDoc(bucket))
+	e.GET("/api/:id", getAPIDoc(bucket, "id"))
+	e.POST("/api", createOrUpdateAPIDoc(bucket))
+	e.PUT("/api", createOrUpdateAPIDoc(bucket))
+	e.DELETE("/api/:id", deleteAPIDoc(bucket, "id"))
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8323"))
 }
 
-// Handler
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
+func deleteAPIDoc(bucket *gocb.Bucket, parameterName string) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		key := c.Param(parameterName)
+
+		var cas gocb.Cas
+
+		_, errGet := bucket.Remove(key, cas)
+
+		if errGet != nil {
+			errorMsg := fmt.Sprintf("Failed to get The doc [ID: %s] due to %v.", key, errGet)
+			log.Print(errorMsg)
+			return c.JSON(http.StatusNotFound, errorMsg)
+		}
+
+		return c.JSON(http.StatusOK, "Removed")
+	}
 }
 
-func getAPIDoc(bucket *gocb.Bucket) func(c echo.Context) error {
+func getAPIDoc(bucket *gocb.Bucket, parameterName string) func(c echo.Context) error {
 
 	return func(c echo.Context) error {
-		key := c.QueryParam("ID")
+
+		// Get parameter from URI (:id) case sensitive
+		// If the parameter was not found,
+		key := c.Param(parameterName)
 
 		var doc *APIDefinition
 
@@ -63,22 +82,18 @@ func getAPIDoc(bucket *gocb.Bucket) func(c echo.Context) error {
 		if errGet != nil {
 			errorMsg := fmt.Sprintf("Failed to get doc by [%s] due to %v.", key, errGet)
 			log.Print(errorMsg)
-			return c.JSON(http.StatusInternalServerError, errorMsg)
-		}
-
-		if doc == nil {
-			log.Printf("Doc not found for key %s.", key)
-			return c.JSON(http.StatusNotFound, "API Doc not found.")
+			return c.JSON(http.StatusNotFound, errorMsg)
 		}
 
 		return c.JSON(http.StatusOK, doc)
 	}
 }
 
-func createAPIDoc(bucket *gocb.Bucket) func(c echo.Context) error {
+func createOrUpdateAPIDoc(bucket *gocb.Bucket) func(c echo.Context) error {
 
 	return func(c echo.Context) error {
 		doc := new(APIDefinition)
+		// Bind the request body to the doc entity instance
 		if err := c.Bind(doc); err != nil {
 			return c.String(http.StatusBadRequest, fmt.Sprint(err))
 		}
