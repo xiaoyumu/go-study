@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"strconv"
-	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
 )
@@ -30,42 +30,115 @@ func main() {
 	log.Println("Ping succeeded")
 	defer db.Close()
 
-	stmt, err := db.Prepare(
-		"SELECT ID, Name, Description, " +
-			"Price, " +
-			"CAST(Price * 100 AS BigInt) AS PriceInt, CreatedTime, Quantity, UpdatedTime, Active " +
-			"FROM dbo.Product WITH(NOLOCK)")
+	sqlStatement := "SELECT ID, Name, Description, " +
+		"Price, " +
+		"CAST(Price * 100 AS BigInt) AS PriceInt, CreatedTime, Quantity, UpdatedTime, Active " +
+		"FROM dbo.Product WITH(NOLOCK)"
 
-	if err != nil {
-		log.Fatal("Prepare failed:", err.Error())
+	ds := executeDataSet(db, sqlStatement)
+
+	if ds == nil {
+		log.Printf("Failed to executeDataSet.")
+		os.Exit(-1)
 	}
 
+}
+
+func executeDataSet(db *sql.DB, sqlStatement string) *DataSet {
+
+	dataSet := DataSet{}
+
+	stmt, err := db.Prepare(sqlStatement)
+	if err != nil {
+		log.Fatal("Prepare Statement failed:", err)
+		panic(err)
+	}
 	defer stmt.Close()
 
 	query, err := stmt.Query()
-
-	var id int32
-	var name string
-	var description string
-	var price []byte
-	var priceInt int64
-	var createdTime time.Time
-	var quantity int32
-	var updatedTime time.Time
-	var active bool
-
-	for {
-		if !query.Next() {
-			break
-		}
-		err = query.Scan(&id, &name, &description, &price, &priceInt, &createdTime, &quantity, &updatedTime, &active)
-		if err != nil {
-			log.Fatal("Scan failed:", err.Error())
-		}
-		log.Printf("Row: %v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t",
-			id, name, description, toFloat64(price), priceInt, createdTime, quantity, updatedTime, active)
+	if err != nil {
+		log.Fatal("Query failed:", err)
+		panic(err)
 	}
 
+	for {
+
+		table, err := createTable(query)
+		for query.Next() {
+			// Since the query.Scan(dest ...interface{}) takes
+			// a slice of pointer, we need to create two slice
+			// one for actual values, and one for the pointer to
+			// each actual values. Just pass the pointer slice
+			// to scan method to make things work.
+			values := make([]interface{}, table.ColumnCount)
+			valuePtrs := make([]interface{}, table.ColumnCount)
+
+			for i := 0; i < table.ColumnCount; i++ {
+				valuePtrs[i] = &values[i]
+			}
+
+			err = query.Scan(valuePtrs...)
+
+			if err != nil {
+				log.Fatal("Scan failed:", err)
+			}
+
+			table.appendRowData(values)
+		}
+
+		if !query.NextResultSet() {
+			break
+		}
+	}
+	return &dataSet
+}
+
+func (dt *DataTable) appendRowData(values []interface{}) {
+	row := DataRow{
+		Values: values,
+	}
+	dt.Rows = append(dt.Rows, row)
+	log.Println(values)
+}
+
+func createTable(query *sql.Rows) (*DataTable, error) {
+	columns, _ := query.Columns()
+	//columnTypes, _ := query.ColumnTypes()
+	colCount := len(columns)
+	table := DataTable{
+		Columns:     make([]string, colCount),
+		ColumnCount: colCount,
+		Rows:        make([]DataRow, 10),
+	}
+
+	table.Columns = columns
+
+	log.Println(columns)
+
+	return &table, nil
+}
+
+type DataSet struct {
+	tables []DataTable
+}
+
+type DataTable struct {
+	Name        string
+	Columns     []string
+	Rows        []DataRow
+	ColumnCount int
+}
+
+type DataColumn struct {
+	Name   string
+	Type   string
+	DBType string
+	DBSize int32
+	Index  int32
+}
+
+type DataRow struct {
+	Values []interface{}
 }
 
 func toFloat64(value []uint8) float64 {
