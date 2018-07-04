@@ -42,11 +42,20 @@ func main() {
 		os.Exit(-1)
 	}
 
+	for _, table := range ds.tables {
+		log.Printf("Dumping table %s", table.Name)
+		log.Println(table.Columns)
+		for _, row := range table.Rows {
+			log.Println(row.Values)
+		}
+	}
 }
 
 func executeDataSet(db *sql.DB, sqlStatement string) *DataSet {
 
-	dataSet := DataSet{}
+	dataSet := DataSet{
+		tables: []*DataTable{},
+	}
 
 	stmt, err := db.Prepare(sqlStatement)
 	if err != nil {
@@ -83,9 +92,14 @@ func executeDataSet(db *sql.DB, sqlStatement string) *DataSet {
 				log.Fatal("Scan failed:", err)
 			}
 
-			table.appendRowData(values)
+			table.addRow(values)
 		}
 
+		// Add Current table into this data set
+		dataSet.addTable(table)
+
+		// If no more result set found in this query
+		// finish execution
 		if !query.NextResultSet() {
 			break
 		}
@@ -93,12 +107,20 @@ func executeDataSet(db *sql.DB, sqlStatement string) *DataSet {
 	return &dataSet
 }
 
-func (dt *DataTable) appendRowData(values []interface{}) {
+func (ds *DataSet) addTable(table *DataTable) {
+
+	if len(table.Name) == 0 {
+		table.Name = fmt.Sprintf("Table_%v", len(ds.tables)+1)
+	}
+	ds.tables = append(ds.tables, table)
+}
+
+func (dt *DataTable) addRow(rowValues []interface{}) {
 	row := DataRow{
-		Values: values,
+		ParentTable: dt,
+		Values:      rowValues,
 	}
 	dt.Rows = append(dt.Rows, row)
-	log.Println(values)
 }
 
 func createTable(query *sql.Rows) (*DataTable, error) {
@@ -108,18 +130,16 @@ func createTable(query *sql.Rows) (*DataTable, error) {
 	table := DataTable{
 		Columns:     make([]string, colCount),
 		ColumnCount: colCount,
-		Rows:        make([]DataRow, 10),
+		Rows:        []DataRow{},
 	}
 
 	table.Columns = columns
-
-	log.Println(columns)
 
 	return &table, nil
 }
 
 type DataSet struct {
-	tables []DataTable
+	tables []*DataTable
 }
 
 type DataTable struct {
@@ -138,7 +158,8 @@ type DataColumn struct {
 }
 
 type DataRow struct {
-	Values []interface{}
+	ParentTable *DataTable // The table which this DataRow belongs to
+	Values      []interface{}
 }
 
 func toFloat64(value []uint8) float64 {
