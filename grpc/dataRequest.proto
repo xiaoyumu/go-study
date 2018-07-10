@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package databaseRpcDemo;
+
+// import "google/protobuf/any.proto";
+import "google/protobuf/any.proto";
+
+message Request {
+    string server = 1;
+    int32 port = 2;
+    string database = 3;
+    string userId = 4;
+    string password = 5;
+    string sqlStatement = 6;
+}
+
+message Response {
+    string result = 1;
+    DataSet dataset = 2;
+}
+
+message DataSet {
+    repeated DataTable tables = 1; // Table list
+}
+
+message DataTable {
+    string name = 1;
+    repeated DataColumn columns = 2;
+    repeated DataRow rows = 3;
+}
+
+message DataColumn {
+    string name = 1;
+    string type = 2;
+    string dbType = 3;
+    int32 dbSize = 4;
+    int32 precision = 5;
+    int32 index = 6;
+
+}
+
+message DataRow {
+    repeated google.protobuf.Any values = 1;
+}
