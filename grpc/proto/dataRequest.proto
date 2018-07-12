@@ -1,8 +1,13 @@
+/*
+Run following command in the folder of file dataRequest.proto in
+to generate the pb.go code file.
+
+$ protoc dataRequest.proto --go_out=plugins=grpc:.
+*/
 syntax = "proto3";
 
 package remoteDataAccess;
-
-// import "google/protobuf/any.proto";
+ 
 import "google/protobuf/any.proto";
 
 option java_multiple_files = true;

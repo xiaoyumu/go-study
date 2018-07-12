@@ -8,6 +8,11 @@ import fmt "fmt"
 import math "math"
 import any "github.com/golang/protobuf/ptypes/any"
 
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
+
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
@@ -366,6 +371,78 @@ func init() {
 	proto.RegisterType((*DataTable)(nil), "remoteDataAccess.DataTable")
 	proto.RegisterType((*DataColumn)(nil), "remoteDataAccess.DataColumn")
 	proto.RegisterType((*DataRow)(nil), "remoteDataAccess.DataRow")
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// RemoteDBServiceClient is the client API for RemoteDBService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type RemoteDBServiceClient interface {
+	Execute(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+}
+
+type remoteDBServiceClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewRemoteDBServiceClient(cc *grpc.ClientConn) RemoteDBServiceClient {
+	return &remoteDBServiceClient{cc}
+}
+
+func (c *remoteDBServiceClient) Execute(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error) {
+	out := new(DbResponse)
+	err := c.cc.Invoke(ctx, "/remoteDataAccess.RemoteDBService/Execute", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RemoteDBServiceServer is the server API for RemoteDBService service.
+type RemoteDBServiceServer interface {
+	Execute(context.Context, *DbRequest) (*DbResponse, error)
+}
+
+func RegisterRemoteDBServiceServer(s *grpc.Server, srv RemoteDBServiceServer) {
+	s.RegisterService(&_RemoteDBService_serviceDesc, srv)
+}
+
+func _RemoteDBService_Execute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DbRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RemoteDBServiceServer).Execute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/remoteDataAccess.RemoteDBService/Execute",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RemoteDBServiceServer).Execute(ctx, req.(*DbRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _RemoteDBService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "remoteDataAccess.RemoteDBService",
+	HandlerType: (*RemoteDBServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Execute",
+			Handler:    _RemoteDBService_Execute_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "dataRequest.proto",
 }
 
 func init() { proto.RegisterFile("dataRequest.proto", fileDescriptor_dataRequest_566a223ca8ef1259) }
