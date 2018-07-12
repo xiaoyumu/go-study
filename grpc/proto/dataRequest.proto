@@ -1,11 +1,19 @@
 syntax = "proto3";
 
-package databaseRpcDemo;
+package remoteDataAccess;
 
 // import "google/protobuf/any.proto";
 import "google/protobuf/any.proto";
 
-message Request {
+option java_multiple_files = true;
+option java_package = "fish.grpc.rda";
+option java_outer_classname = "RemoteDBServiceProto";
+
+service RemoteDBService{
+    rpc Execute(DbRequest) returns (DbResponse) {}
+}
+
+message DbRequest {
     string server = 1;
     int32 port = 2;
     string database = 3;
@@ -14,9 +22,10 @@ message Request {
     string sqlStatement = 6;
 }
 
-message Response {
+message DbResponse {
     string result = 1;
-    DataSet dataset = 2;
+    string message = 2;
+    DataSet dataset = 3;
 }
 
 message DataSet {
