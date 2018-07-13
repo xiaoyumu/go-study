@@ -24,6 +24,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	response, err := c.Execute(ctx, &rda.DbRequest{
 		Server:   "DBServer",
 		Port:     1433,
@@ -34,4 +35,5 @@ func main() {
 		log.Fatalf("could not greet: %v", err)
 	}
 	log.Printf("Remote Result is : %s", response.Result)
+	log.Printf("Remote Message is : %s", response.Message)
 }

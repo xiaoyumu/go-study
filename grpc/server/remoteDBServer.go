@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	rda "github.com/xiaoyumu/go-study/grpc/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -21,9 +24,34 @@ func (s *server) Execute(ctx context.Context, req *rda.DbRequest) (*rda.DbRespon
 	log.Println("RPC call received.")
 	dumpRemoteDbRequest(req)
 
+	clientIP, err := getClietIP(ctx)
+
+	msg := ""
+	result := "Succeeded"
+	if err != nil {
+		msg = err.Error()
+	} else {
+		msg = fmt.Sprintf("Request from %s has been processed.", clientIP)
+	}
+
+	log.Println(msg)
+
 	return &rda.DbResponse{
-		Result: "Succeeded",
+		Result:  result,
+		Message: msg,
 	}, nil
+}
+
+func getClietIP(ctx context.Context) (string, error) {
+	pr, ok := peer.FromContext(ctx)
+	if !ok {
+		return "", fmt.Errorf("[getClinetIP] invoke FromContext() failed")
+	}
+	if pr.Addr == net.Addr(nil) {
+		return "", fmt.Errorf("[getClientIP] peer.Addr is nil")
+	}
+	addSlice := strings.Split(pr.Addr.String(), ":")
+	return addSlice[0], nil
 }
 
 func dumpRemoteDbRequest(req *rda.DbRequest) {
