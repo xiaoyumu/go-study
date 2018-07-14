@@ -24,7 +24,7 @@ message DbRequest {
     // Token will be used to identify the server connection info    
     string token = 1;
     // Or the server connection info was given in the DbRequest
-    ServerInfo server = 2;
+    ServerInfo serverInfo = 2;
 
     // The script name to locate a DB script for execution
     string script = 3;
