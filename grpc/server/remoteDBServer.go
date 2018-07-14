@@ -22,33 +22,54 @@ const (
 
 type server struct{}
 
-func (s *server) Execute(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
-	log.Println("RPC call received.")
-	 
+/*
+    ExecuteNoneQuery(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+	ExecuteScalar(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+	ExecuteDataSet(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+*/
+
+func (s *server) ExecuteNoneQuery(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
+	log.Println("RPC call [ExecuteNoneQuery] received.")
+	return &rda.DbResponse{
+		Succeeded: false,
+		Message:   "Not implemented",
+	}, nil
+}
+
+func (s *server) ExecuteScalar(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
+	log.Println("RPC call [ExecuteScalar] received.")
+	return &rda.DbResponse{
+		Succeeded: false,
+		Message:   "Not implemented",
+	}, nil
+}
+
+func (s *server) ExecuteDataSet(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
+	log.Println("RPC call [ExecuteNoneQuery] received.")
 
 	clientIP, err := getClietIP(ctx)
 
 	msg := ""
-	result := "Succeeded"
+	result := true
 	if err != nil {
 		msg = err.Error()
-	}  
+	}
 
 	log.Printf("From client %s ", clientIP)
 
-    response, errE := executeDbRequest(req)
-	
-	if errE != nil{
+	response, errE := executeDbRequest(req)
+
+	if errE != nil {
 		msg = errE.Error()
 	}
 
-	if response == nil{
+	if response == nil {
 		response = &rda.DbResponse{
-			Result:  "Failed",
-			Message: msg,
+			Succeeded: false,
+			Message:   msg,
 		}
 	} else {
-		response.Result = result
+		response.Succeeded = result
 	}
 
 	return response, nil
@@ -68,11 +89,9 @@ func getClietIP(ctx context.Context) (string, error) {
 }
 
 func dumpRemoteDbRequest(req *rda.DbRequest) {
-	log.Printf("Dumping request : Server=%v:%v;UID=%v;PWD=%v ...",
-		req.Server,
-		req.Port,
-		req.UserId,
-		req.Password)
+	connStr, _ := buildConnectionString(req)
+
+	log.Printf("Dumping request : %s ...", connStr)
 	log.Printf("SQL:%s", req.SqlStatement)
 }
 
@@ -80,11 +99,11 @@ func buildConnectionString(req *rda.DbRequest) (string, error) {
 	// Sample Connection string:
 	// sqlserver://dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
 	conn := fmt.Sprintf("sqlserver://%s:%s@%s:%v?database=%s&connection+timeout=30",
-		req.UserId,
-		req.Password,
-		req.Server,
-		req.Port,
-		req.Database)
+		req.ServerInfo.UserId,
+		req.ServerInfo.Password,
+		req.ServerInfo.Server,
+		req.ServerInfo.Port,
+		req.ServerInfo.Database)
 	return conn, nil
 }
 

@@ -81,7 +81,8 @@ func executeDataSet(db *sql.DB, sqlStatement string) *DataSet {
 			// to scan method to make things work.
 			values := make([]interface{}, table.ColumnCount)
 			valuePtrs := make([]interface{}, table.ColumnCount)
-
+			// Store the address of each value in values slice into
+			// corresponding element of valuePtrs slice
 			for i := 0; i < table.ColumnCount; i++ {
 				valuePtrs[i] = &values[i]
 			}

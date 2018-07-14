@@ -26,17 +26,19 @@ func main() {
 	defer cancel()
 
 	// dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
-	response, err := c.Execute(ctx, &rda.DbRequest{
-		Server:   "192.168.1.154",
-		Port:     1433,
-		UserId:   "dev",
-		Password: "d3v",
-		Database: "godemo",
+	response, err := c.ExecuteDataSet(ctx, &rda.DbRequest{
+		ServerInfo: &rda.ServerInfo{
+			Server:   "192.168.1.154",
+			Port:     1433,
+			UserId:   "dev",
+			Password: "d3v",
+			Database: "godemo",
+		},
 		SqlStatement: "SELECT GETDATE()",
 	})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Remote Result is : %s", response.Result)
+	log.Printf("Remote Result is : %v", response.Succeeded)
 	log.Printf("Remote Message is : %s", response.Message)
 }
