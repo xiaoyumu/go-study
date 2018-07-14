@@ -15,22 +15,38 @@ option java_package = "fish.grpc.rda";
 option java_outer_classname = "RemoteDBServiceProto";
 
 service RemoteDBService{
-    rpc Execute(DbRequest) returns (DbResponse) {}
+    rpc ExecuteNoneQuery(DbRequest) returns (DbResponse) {}
+    rpc ExecuteScalar(DbRequest) returns (DbResponse) {}
+    rpc ExecuteDataSet(DbRequest) returns (DbResponse) {}
 }
 
 message DbRequest {
+    // Token will be used to identify the server connection info    
+    string token = 1;
+    // Or the server connection info was given in the DbRequest
+    ServerInfo server = 2;
+
+    // The script name to locate a DB script for execution
+    string script = 3;
+
+    // The plain text sql statement
+    string sqlStatement = 4;
+}
+
+message ServerInfo {
     string server = 1;
     int32 port = 2;
     string database = 3;
     string userId = 4;
     string password = 5;
-    string sqlStatement = 6;
 }
 
 message DbResponse {
-    string result = 1;
+    bool succeeded = 1;
     string message = 2;
-    DataSet dataset = 3;
+    google.protobuf.Any scalarValue = 3;
+    int32 rowEffected = 4;
+    DataSet dataset = 5;
 }
 
 message DataSet {
@@ -39,16 +55,28 @@ message DataSet {
 
 message DataTable {
     string name = 1;
+
+    // Column definitions of this table
     repeated DataColumn columns = 2;
+
+    // Rows in this table
     repeated DataRow rows = 3;
 }
 
 message DataColumn {
+
+    // The name of the column
     string name = 1;
-    string type = 2;
+
+    // The db type of the column    
     string dbType = 3;
+
+    // The db size
     int32 dbSize = 4;
+
+
     int32 precision = 5;
+
     int32 index = 6;
 
 }

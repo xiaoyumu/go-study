@@ -25,12 +25,14 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DbRequest struct {
-	Server               string   `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
-	Port                 int32    `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	Database             string   `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
-	UserId               string   `protobuf:"bytes,4,opt,name=userId,proto3" json:"userId,omitempty"`
-	Password             string   `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
-	SqlStatement         string   `protobuf:"bytes,6,opt,name=sqlStatement,proto3" json:"sqlStatement,omitempty"`
+	// Token will be used to identify the server connection info
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	// Or the server connection info was given in the DbRequest
+	Server *ServerInfo `protobuf:"bytes,2,opt,name=server,proto3" json:"server,omitempty"`
+	// The script name to locate a DB script for execution
+	Script string `protobuf:"bytes,3,opt,name=script,proto3" json:"script,omitempty"`
+	// The plain text sql statement
+	SqlStatement         string   `protobuf:"bytes,4,opt,name=sqlStatement,proto3" json:"sqlStatement,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -40,7 +42,7 @@ func (m *DbRequest) Reset()         { *m = DbRequest{} }
 func (m *DbRequest) String() string { return proto.CompactTextString(m) }
 func (*DbRequest) ProtoMessage()    {}
 func (*DbRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataRequest_566a223ca8ef1259, []int{0}
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{0}
 }
 func (m *DbRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DbRequest.Unmarshal(m, b)
@@ -60,37 +62,23 @@ func (m *DbRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DbRequest proto.InternalMessageInfo
 
-func (m *DbRequest) GetServer() string {
+func (m *DbRequest) GetToken() string {
+	if m != nil {
+		return m.Token
+	}
+	return ""
+}
+
+func (m *DbRequest) GetServer() *ServerInfo {
 	if m != nil {
 		return m.Server
 	}
-	return ""
+	return nil
 }
 
-func (m *DbRequest) GetPort() int32 {
+func (m *DbRequest) GetScript() string {
 	if m != nil {
-		return m.Port
-	}
-	return 0
-}
-
-func (m *DbRequest) GetDatabase() string {
-	if m != nil {
-		return m.Database
-	}
-	return ""
-}
-
-func (m *DbRequest) GetUserId() string {
-	if m != nil {
-		return m.UserId
-	}
-	return ""
-}
-
-func (m *DbRequest) GetPassword() string {
-	if m != nil {
-		return m.Password
+		return m.Script
 	}
 	return ""
 }
@@ -102,10 +90,82 @@ func (m *DbRequest) GetSqlStatement() string {
 	return ""
 }
 
+type ServerInfo struct {
+	Server               string   `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
+	Port                 int32    `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	Database             string   `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
+	UserId               string   `protobuf:"bytes,4,opt,name=userId,proto3" json:"userId,omitempty"`
+	Password             string   `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ServerInfo) Reset()         { *m = ServerInfo{} }
+func (m *ServerInfo) String() string { return proto.CompactTextString(m) }
+func (*ServerInfo) ProtoMessage()    {}
+func (*ServerInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{1}
+}
+func (m *ServerInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServerInfo.Unmarshal(m, b)
+}
+func (m *ServerInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServerInfo.Marshal(b, m, deterministic)
+}
+func (dst *ServerInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServerInfo.Merge(dst, src)
+}
+func (m *ServerInfo) XXX_Size() int {
+	return xxx_messageInfo_ServerInfo.Size(m)
+}
+func (m *ServerInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServerInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServerInfo proto.InternalMessageInfo
+
+func (m *ServerInfo) GetServer() string {
+	if m != nil {
+		return m.Server
+	}
+	return ""
+}
+
+func (m *ServerInfo) GetPort() int32 {
+	if m != nil {
+		return m.Port
+	}
+	return 0
+}
+
+func (m *ServerInfo) GetDatabase() string {
+	if m != nil {
+		return m.Database
+	}
+	return ""
+}
+
+func (m *ServerInfo) GetUserId() string {
+	if m != nil {
+		return m.UserId
+	}
+	return ""
+}
+
+func (m *ServerInfo) GetPassword() string {
+	if m != nil {
+		return m.Password
+	}
+	return ""
+}
+
 type DbResponse struct {
-	Result               string   `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	Succeeded            bool     `protobuf:"varint,1,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
 	Message              string   `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Dataset              *DataSet `protobuf:"bytes,3,opt,name=dataset,proto3" json:"dataset,omitempty"`
+	ScalarValue          *any.Any `protobuf:"bytes,3,opt,name=scalarValue,proto3" json:"scalarValue,omitempty"`
+	RowEffected          int32    `protobuf:"varint,4,opt,name=rowEffected,proto3" json:"rowEffected,omitempty"`
+	Dataset              *DataSet `protobuf:"bytes,5,opt,name=dataset,proto3" json:"dataset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -115,7 +175,7 @@ func (m *DbResponse) Reset()         { *m = DbResponse{} }
 func (m *DbResponse) String() string { return proto.CompactTextString(m) }
 func (*DbResponse) ProtoMessage()    {}
 func (*DbResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataRequest_566a223ca8ef1259, []int{1}
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{2}
 }
 func (m *DbResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DbResponse.Unmarshal(m, b)
@@ -135,11 +195,11 @@ func (m *DbResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DbResponse proto.InternalMessageInfo
 
-func (m *DbResponse) GetResult() string {
+func (m *DbResponse) GetSucceeded() bool {
 	if m != nil {
-		return m.Result
+		return m.Succeeded
 	}
-	return ""
+	return false
 }
 
 func (m *DbResponse) GetMessage() string {
@@ -147,6 +207,20 @@ func (m *DbResponse) GetMessage() string {
 		return m.Message
 	}
 	return ""
+}
+
+func (m *DbResponse) GetScalarValue() *any.Any {
+	if m != nil {
+		return m.ScalarValue
+	}
+	return nil
+}
+
+func (m *DbResponse) GetRowEffected() int32 {
+	if m != nil {
+		return m.RowEffected
+	}
+	return 0
 }
 
 func (m *DbResponse) GetDataset() *DataSet {
@@ -167,7 +241,7 @@ func (m *DataSet) Reset()         { *m = DataSet{} }
 func (m *DataSet) String() string { return proto.CompactTextString(m) }
 func (*DataSet) ProtoMessage()    {}
 func (*DataSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataRequest_566a223ca8ef1259, []int{2}
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{3}
 }
 func (m *DataSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DataSet.Unmarshal(m, b)
@@ -195,19 +269,21 @@ func (m *DataSet) GetTables() []*DataTable {
 }
 
 type DataTable struct {
-	Name                 string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Columns              []*DataColumn `protobuf:"bytes,2,rep,name=columns,proto3" json:"columns,omitempty"`
-	Rows                 []*DataRow    `protobuf:"bytes,3,rep,name=rows,proto3" json:"rows,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Column definitions of this table
+	Columns []*DataColumn `protobuf:"bytes,2,rep,name=columns,proto3" json:"columns,omitempty"`
+	// Rows in this table
+	Rows                 []*DataRow `protobuf:"bytes,3,rep,name=rows,proto3" json:"rows,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
 func (m *DataTable) Reset()         { *m = DataTable{} }
 func (m *DataTable) String() string { return proto.CompactTextString(m) }
 func (*DataTable) ProtoMessage()    {}
 func (*DataTable) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataRequest_566a223ca8ef1259, []int{3}
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{4}
 }
 func (m *DataTable) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DataTable.Unmarshal(m, b)
@@ -249,9 +325,11 @@ func (m *DataTable) GetRows() []*DataRow {
 }
 
 type DataColumn struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type                 string   `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	DbType               string   `protobuf:"bytes,3,opt,name=dbType,proto3" json:"dbType,omitempty"`
+	// The name of the column
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The db type of the column
+	DbType string `protobuf:"bytes,3,opt,name=dbType,proto3" json:"dbType,omitempty"`
+	// The db size
 	DbSize               int32    `protobuf:"varint,4,opt,name=dbSize,proto3" json:"dbSize,omitempty"`
 	Precision            int32    `protobuf:"varint,5,opt,name=precision,proto3" json:"precision,omitempty"`
 	Index                int32    `protobuf:"varint,6,opt,name=index,proto3" json:"index,omitempty"`
@@ -264,7 +342,7 @@ func (m *DataColumn) Reset()         { *m = DataColumn{} }
 func (m *DataColumn) String() string { return proto.CompactTextString(m) }
 func (*DataColumn) ProtoMessage()    {}
 func (*DataColumn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataRequest_566a223ca8ef1259, []int{4}
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{5}
 }
 func (m *DataColumn) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DataColumn.Unmarshal(m, b)
@@ -287,13 +365,6 @@ var xxx_messageInfo_DataColumn proto.InternalMessageInfo
 func (m *DataColumn) GetName() string {
 	if m != nil {
 		return m.Name
-	}
-	return ""
-}
-
-func (m *DataColumn) GetType() string {
-	if m != nil {
-		return m.Type
 	}
 	return ""
 }
@@ -337,7 +408,7 @@ func (m *DataRow) Reset()         { *m = DataRow{} }
 func (m *DataRow) String() string { return proto.CompactTextString(m) }
 func (*DataRow) ProtoMessage()    {}
 func (*DataRow) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dataRequest_566a223ca8ef1259, []int{5}
+	return fileDescriptor_dataRequest_d5cb56601949d98d, []int{6}
 }
 func (m *DataRow) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DataRow.Unmarshal(m, b)
@@ -366,6 +437,7 @@ func (m *DataRow) GetValues() []*any.Any {
 
 func init() {
 	proto.RegisterType((*DbRequest)(nil), "remoteDataAccess.DbRequest")
+	proto.RegisterType((*ServerInfo)(nil), "remoteDataAccess.ServerInfo")
 	proto.RegisterType((*DbResponse)(nil), "remoteDataAccess.DbResponse")
 	proto.RegisterType((*DataSet)(nil), "remoteDataAccess.DataSet")
 	proto.RegisterType((*DataTable)(nil), "remoteDataAccess.DataTable")
@@ -385,7 +457,9 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RemoteDBServiceClient interface {
-	Execute(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+	ExecuteNoneQuery(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+	ExecuteScalar(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
+	ExecuteDataSet(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
 }
 
 type remoteDBServiceClient struct {
@@ -396,9 +470,27 @@ func NewRemoteDBServiceClient(cc *grpc.ClientConn) RemoteDBServiceClient {
 	return &remoteDBServiceClient{cc}
 }
 
-func (c *remoteDBServiceClient) Execute(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error) {
+func (c *remoteDBServiceClient) ExecuteNoneQuery(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error) {
 	out := new(DbResponse)
-	err := c.cc.Invoke(ctx, "/remoteDataAccess.RemoteDBService/Execute", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/remoteDataAccess.RemoteDBService/ExecuteNoneQuery", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *remoteDBServiceClient) ExecuteScalar(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error) {
+	out := new(DbResponse)
+	err := c.cc.Invoke(ctx, "/remoteDataAccess.RemoteDBService/ExecuteScalar", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *remoteDBServiceClient) ExecuteDataSet(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error) {
+	out := new(DbResponse)
+	err := c.cc.Invoke(ctx, "/remoteDataAccess.RemoteDBService/ExecuteDataSet", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -407,27 +499,65 @@ func (c *remoteDBServiceClient) Execute(ctx context.Context, in *DbRequest, opts
 
 // RemoteDBServiceServer is the server API for RemoteDBService service.
 type RemoteDBServiceServer interface {
-	Execute(context.Context, *DbRequest) (*DbResponse, error)
+	ExecuteNoneQuery(context.Context, *DbRequest) (*DbResponse, error)
+	ExecuteScalar(context.Context, *DbRequest) (*DbResponse, error)
+	ExecuteDataSet(context.Context, *DbRequest) (*DbResponse, error)
 }
 
 func RegisterRemoteDBServiceServer(s *grpc.Server, srv RemoteDBServiceServer) {
 	s.RegisterService(&_RemoteDBService_serviceDesc, srv)
 }
 
-func _RemoteDBService_Execute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RemoteDBService_ExecuteNoneQuery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DbRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RemoteDBServiceServer).Execute(ctx, in)
+		return srv.(RemoteDBServiceServer).ExecuteNoneQuery(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/remoteDataAccess.RemoteDBService/Execute",
+		FullMethod: "/remoteDataAccess.RemoteDBService/ExecuteNoneQuery",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RemoteDBServiceServer).Execute(ctx, req.(*DbRequest))
+		return srv.(RemoteDBServiceServer).ExecuteNoneQuery(ctx, req.(*DbRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RemoteDBService_ExecuteScalar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DbRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RemoteDBServiceServer).ExecuteScalar(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/remoteDataAccess.RemoteDBService/ExecuteScalar",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RemoteDBServiceServer).ExecuteScalar(ctx, req.(*DbRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RemoteDBService_ExecuteDataSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DbRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RemoteDBServiceServer).ExecuteDataSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/remoteDataAccess.RemoteDBService/ExecuteDataSet",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RemoteDBServiceServer).ExecuteDataSet(ctx, req.(*DbRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -437,47 +567,61 @@ var _RemoteDBService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*RemoteDBServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Execute",
-			Handler:    _RemoteDBService_Execute_Handler,
+			MethodName: "ExecuteNoneQuery",
+			Handler:    _RemoteDBService_ExecuteNoneQuery_Handler,
+		},
+		{
+			MethodName: "ExecuteScalar",
+			Handler:    _RemoteDBService_ExecuteScalar_Handler,
+		},
+		{
+			MethodName: "ExecuteDataSet",
+			Handler:    _RemoteDBService_ExecuteDataSet_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "dataRequest.proto",
 }
 
-func init() { proto.RegisterFile("dataRequest.proto", fileDescriptor_dataRequest_566a223ca8ef1259) }
+func init() { proto.RegisterFile("dataRequest.proto", fileDescriptor_dataRequest_d5cb56601949d98d) }
 
-var fileDescriptor_dataRequest_566a223ca8ef1259 = []byte{
-	// 481 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x52, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0xc5, 0x4d, 0x9c, 0x90, 0x29, 0x08, 0x58, 0x45, 0x68, 0x1b, 0x72, 0x88, 0x7c, 0x21, 0x07,
-	0x70, 0xa5, 0x44, 0x82, 0x1b, 0x52, 0x43, 0x41, 0xe2, 0x56, 0x6d, 0x7a, 0xe1, 0xb8, 0xb6, 0xa7,
-	0xc1, 0x92, 0xed, 0x75, 0x77, 0xd6, 0x49, 0xc3, 0x07, 0xf0, 0x0d, 0xfc, 0x03, 0x3f, 0x89, 0x76,
-	0xd7, 0x6e, 0x45, 0x65, 0x6e, 0xf3, 0x66, 0xdf, 0xcc, 0xbc, 0x7d, 0x33, 0xf0, 0x2a, 0x93, 0x46,
-	0x0a, 0xbc, 0x6d, 0x90, 0x4c, 0x5c, 0x6b, 0x65, 0x14, 0x7b, 0xa9, 0xb1, 0x54, 0x06, 0x2f, 0xa5,
-	0x91, 0x17, 0x69, 0x8a, 0x44, 0xb3, 0xb3, 0x9d, 0x52, 0xbb, 0x02, 0xcf, 0xdd, 0x7b, 0xd2, 0xdc,
-	0x9c, 0xcb, 0xea, 0xe8, 0xc9, 0xd1, 0x9f, 0x00, 0x26, 0x97, 0x49, 0xdb, 0x80, 0xbd, 0x86, 0x11,
-	0xa1, 0xde, 0xa3, 0xe6, 0xc1, 0x22, 0x58, 0x4e, 0x44, 0x8b, 0x18, 0x83, 0x61, 0xad, 0xb4, 0xe1,
-	0x27, 0x8b, 0x60, 0x19, 0x0a, 0x17, 0xb3, 0x19, 0x3c, 0xb5, 0xb3, 0x13, 0x49, 0xc8, 0x07, 0x8e,
-	0x7d, 0x8f, 0x6d, 0x9f, 0x86, 0x50, 0x7f, 0xcb, 0xf8, 0xd0, 0xf7, 0xf1, 0xc8, 0xd6, 0xd4, 0x92,
-	0xe8, 0xa0, 0x74, 0xc6, 0x43, 0x5f, 0xd3, 0x61, 0x16, 0xc1, 0x33, 0xba, 0x2d, 0xb6, 0x46, 0x1a,
-	0x2c, 0xb1, 0x32, 0x7c, 0xe4, 0xde, 0xff, 0xc9, 0x45, 0x04, 0x60, 0xc5, 0x52, 0xad, 0x2a, 0x3f,
-	0x45, 0x23, 0x35, 0x85, 0xe9, 0xd4, 0x7a, 0xc4, 0x38, 0x8c, 0x4b, 0x24, 0x92, 0x3b, 0x74, 0x82,
-	0x27, 0xa2, 0x83, 0x6c, 0x0d, 0x63, 0xab, 0x91, 0xd0, 0x38, 0xc9, 0xa7, 0xab, 0xb3, 0xf8, 0xb1,
-	0x59, 0xb1, 0x0d, 0xb7, 0x68, 0x44, 0xc7, 0x8c, 0x3e, 0xc1, 0xb8, 0xcd, 0xb1, 0x35, 0x8c, 0x8c,
-	0x4c, 0x0a, 0x24, 0x1e, 0x2c, 0x06, 0xcb, 0xd3, 0xd5, 0x9b, 0xfe, 0xf2, 0x6b, 0xcb, 0x11, 0x2d,
-	0x35, 0xfa, 0x65, 0x2d, 0xee, 0xb2, 0xd6, 0xca, 0x4a, 0x96, 0xd8, 0x4a, 0x76, 0x31, 0xfb, 0x00,
-	0xe3, 0x54, 0x15, 0x4d, 0x59, 0x11, 0x3f, 0x71, 0x7d, 0xe7, 0xfd, 0x7d, 0x3f, 0x3b, 0x92, 0xe8,
-	0xc8, 0xec, 0x3d, 0x0c, 0xb5, 0x3a, 0x10, 0x1f, 0xb8, 0xa2, 0xff, 0xfc, 0x45, 0xa8, 0x83, 0x70,
-	0xb4, 0xe8, 0x77, 0x00, 0xf0, 0xd0, 0xa6, 0x57, 0x09, 0x83, 0xa1, 0x39, 0xd6, 0x9d, 0x6f, 0x2e,
-	0xb6, 0x36, 0x67, 0xc9, 0xb5, 0xcd, 0xfa, 0x35, 0xb7, 0xc8, 0xe7, 0xb7, 0xf9, 0x4f, 0x74, 0x4b,
-	0x0e, 0x45, 0x8b, 0xd8, 0x1c, 0x26, 0xb5, 0xc6, 0x34, 0xa7, 0x5c, 0x55, 0x6e, 0xcb, 0xa1, 0x78,
-	0x48, 0xb0, 0x29, 0x84, 0x79, 0x95, 0xe1, 0x9d, 0xdb, 0x6f, 0x28, 0x3c, 0x88, 0x3e, 0x7a, 0x8f,
-	0x85, 0x3a, 0xb0, 0x77, 0x30, 0xda, 0xcb, 0xa2, 0xb9, 0xf7, 0x78, 0x1a, 0xfb, 0xeb, 0x8d, 0xbb,
-	0xeb, 0x8d, 0x2f, 0xaa, 0xa3, 0x68, 0x39, 0xab, 0xef, 0xf0, 0x42, 0xf8, 0x5f, 0x6f, 0xb6, 0xa8,
-	0xf7, 0x79, 0x8a, 0xec, 0x2b, 0x8c, 0xbf, 0xdc, 0x61, 0xda, 0x18, 0x64, 0x7d, 0xfb, 0xe9, 0x8e,
-	0x7d, 0x36, 0xef, 0x7f, 0xf4, 0xc7, 0x15, 0x3d, 0xd9, 0xbc, 0x85, 0xe7, 0x37, 0x39, 0xfd, 0x88,
-	0x77, 0xba, 0x4e, 0x63, 0x9d, 0xc9, 0xcd, 0xf4, 0xd1, 0xa4, 0x2b, 0x2b, 0xe8, 0x2a, 0x48, 0x46,
-	0x4e, 0xd9, 0xfa, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x65, 0xcb, 0x49, 0xf3, 0x8c, 0x03, 0x00,
-	0x00,
+var fileDescriptor_dataRequest_d5cb56601949d98d = []byte{
+	// 587 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0x4d, 0x6f, 0xd3, 0x40,
+	0x10, 0xc5, 0x6d, 0xe3, 0x34, 0x13, 0x0a, 0x65, 0x55, 0x55, 0x6e, 0xc9, 0x21, 0xf2, 0x85, 0x1e,
+	0xc0, 0x95, 0x52, 0x54, 0x6e, 0x48, 0x2d, 0xed, 0xa1, 0x12, 0x1f, 0x65, 0x53, 0x71, 0x5f, 0xaf,
+	0x27, 0xc1, 0xc2, 0xf1, 0xba, 0xbb, 0xeb, 0xa6, 0xe1, 0x8c, 0x10, 0x77, 0x7e, 0x1a, 0x3f, 0x08,
+	0xb4, 0x1f, 0x6e, 0x4a, 0x31, 0xa7, 0xde, 0xfc, 0x66, 0xde, 0xbe, 0x9d, 0x7d, 0x6f, 0x0c, 0x4f,
+	0x32, 0xa6, 0x19, 0xc5, 0xcb, 0x1a, 0x95, 0x4e, 0x2a, 0x29, 0xb4, 0x20, 0x9b, 0x12, 0x67, 0x42,
+	0xe3, 0x09, 0xd3, 0xec, 0x88, 0x73, 0x54, 0x6a, 0x77, 0x67, 0x2a, 0xc4, 0xb4, 0xc0, 0x7d, 0xdb,
+	0x4f, 0xeb, 0xc9, 0x3e, 0x2b, 0x17, 0x8e, 0x1c, 0xff, 0x0c, 0xa0, 0x77, 0x92, 0x7a, 0x01, 0xb2,
+	0x05, 0x1d, 0x2d, 0xbe, 0x60, 0x19, 0x05, 0xc3, 0x60, 0xaf, 0x47, 0x1d, 0x20, 0x2f, 0x21, 0x54,
+	0x28, 0xaf, 0x50, 0x46, 0x2b, 0xc3, 0x60, 0xaf, 0x3f, 0x1a, 0x24, 0x77, 0x6f, 0x48, 0xc6, 0xb6,
+	0x7f, 0x56, 0x4e, 0x04, 0xf5, 0x5c, 0xb2, 0x0d, 0xa1, 0xe2, 0x32, 0xaf, 0x74, 0xb4, 0x6a, 0xc5,
+	0x3c, 0x22, 0x31, 0x3c, 0x54, 0x97, 0xc5, 0x58, 0x33, 0x8d, 0x33, 0x2c, 0x75, 0xb4, 0x66, 0xbb,
+	0x7f, 0xd5, 0xe2, 0x1f, 0x01, 0xc0, 0x52, 0xd2, 0x4a, 0xb9, 0x01, 0x02, 0x2f, 0xe5, 0xae, 0x20,
+	0xb0, 0x56, 0x09, 0xa9, 0xed, 0x58, 0x1d, 0x6a, 0xbf, 0xc9, 0x2e, 0xac, 0x1b, 0x4b, 0x52, 0xa6,
+	0xd0, 0x5f, 0x7c, 0x83, 0x8d, 0x4e, 0xad, 0x50, 0x9e, 0x65, 0xfe, 0x52, 0x8f, 0xcc, 0x99, 0x8a,
+	0x29, 0x35, 0x17, 0x32, 0x8b, 0x3a, 0xee, 0x4c, 0x83, 0xe3, 0x5f, 0x01, 0x80, 0x31, 0x48, 0x55,
+	0xa2, 0x54, 0x48, 0x06, 0xd0, 0x53, 0x35, 0xe7, 0x88, 0x19, 0x66, 0x76, 0x9a, 0x75, 0xba, 0x2c,
+	0x90, 0x08, 0xba, 0x33, 0x54, 0x8a, 0x4d, 0xd1, 0xce, 0xd4, 0xa3, 0x0d, 0x24, 0x87, 0xd0, 0x57,
+	0x9c, 0x15, 0x4c, 0x7e, 0x62, 0x45, 0xed, 0x26, 0xeb, 0x8f, 0xb6, 0x12, 0x17, 0x4c, 0xd2, 0x04,
+	0x93, 0x1c, 0x95, 0x0b, 0x7a, 0x9b, 0x48, 0x86, 0xd0, 0x97, 0x62, 0x7e, 0x3a, 0x99, 0x20, 0xd7,
+	0xe8, 0xe6, 0xee, 0xd0, 0xdb, 0x25, 0x72, 0x00, 0x5d, 0xf3, 0x40, 0x85, 0xda, 0xce, 0xde, 0x1f,
+	0xed, 0xfc, 0x1b, 0x8f, 0xf9, 0x1c, 0xa3, 0xa6, 0x0d, 0x33, 0x7e, 0x0d, 0x5d, 0x5f, 0x23, 0x07,
+	0x10, 0x6a, 0x96, 0x16, 0xa8, 0xa2, 0x60, 0xb8, 0xba, 0xd7, 0x1f, 0x3d, 0x6d, 0x3f, 0x7e, 0x61,
+	0x38, 0xd4, 0x53, 0xe3, 0xef, 0x66, 0x6d, 0x9a, 0xaa, 0xc9, 0xa1, 0x64, 0x33, 0xf4, 0xe9, 0xd8,
+	0x6f, 0x72, 0x08, 0x5d, 0x2e, 0x8a, 0x7a, 0x56, 0xaa, 0x68, 0xc5, 0xea, 0x0e, 0xda, 0x75, 0xdf,
+	0x58, 0x12, 0x6d, 0xc8, 0xe4, 0x05, 0xac, 0x49, 0x31, 0x57, 0xd1, 0xaa, 0x3d, 0xf4, 0x9f, 0xb7,
+	0x50, 0x31, 0xa7, 0x96, 0x16, 0x7f, 0x33, 0xf1, 0xdc, 0xc8, 0xb4, 0x4e, 0xb2, 0x0d, 0x61, 0x96,
+	0x5e, 0x2c, 0xaa, 0x66, 0x1f, 0x3c, 0x72, 0xf5, 0x71, 0xfe, 0x15, 0xbd, 0xab, 0x1e, 0x99, 0x88,
+	0x2b, 0x89, 0x3c, 0x57, 0xb9, 0x28, 0xad, 0xa5, 0x1d, 0xba, 0x2c, 0x98, 0x5f, 0x24, 0x2f, 0x33,
+	0xbc, 0x8e, 0x42, 0xdb, 0x71, 0x20, 0x7e, 0xe5, 0xfc, 0xa4, 0x62, 0x4e, 0x9e, 0x43, 0x78, 0x65,
+	0xa2, 0x6b, 0xfc, 0x6c, 0x0f, 0xd9, 0x73, 0x46, 0xbf, 0x03, 0x78, 0x4c, 0xdd, 0x13, 0x8f, 0xcd,
+	0xc6, 0xe7, 0x1c, 0xc9, 0x07, 0xd8, 0x3c, 0xbd, 0x46, 0x5e, 0x6b, 0x7c, 0x2f, 0x4a, 0xfc, 0x58,
+	0xa3, 0x5c, 0x90, 0xb6, 0x54, 0x9a, 0xdf, 0x76, 0x77, 0xd0, 0xde, 0x74, 0x2b, 0x1b, 0x3f, 0x20,
+	0x6f, 0x61, 0xc3, 0x0b, 0x8e, 0xed, 0x6a, 0xdd, 0x4f, 0xed, 0x1d, 0x3c, 0xf2, 0x6a, 0xcd, 0x0a,
+	0xdd, 0x47, 0xee, 0xf8, 0x19, 0x6c, 0x4c, 0x72, 0xf5, 0x39, 0x99, 0xca, 0x8a, 0x27, 0x32, 0x63,
+	0xc7, 0x5b, 0x77, 0xfc, 0x38, 0x37, 0xbe, 0x9d, 0x07, 0x69, 0x68, 0x0d, 0x3c, 0xf8, 0x13, 0x00,
+	0x00, 0xff, 0xff, 0xd3, 0x90, 0x15, 0xdc, 0xf3, 0x04, 0x00, 0x00,
 }
