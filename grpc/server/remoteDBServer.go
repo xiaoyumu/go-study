@@ -29,33 +29,23 @@ type server struct{}
 */
 
 func (s *server) ExecuteNoneQuery(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
-	log.Println("RPC call [ExecuteNoneQuery] received.")
+	log.Printf("RPC call [ExecuteNoneQuery] received From client [%s].", getClietIP(ctx))
 	return &rda.DbResponse{
 		Succeeded: false,
-		Message:   "Not implemented",
+		Message:   "ExecuteNoneQuery was not implemented yet",
 	}, nil
 }
 
 func (s *server) ExecuteScalar(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
-	log.Println("RPC call [ExecuteScalar] received.")
-	return &rda.DbResponse{
-		Succeeded: false,
-		Message:   "Not implemented",
-	}, nil
+	log.Printf("RPC call [ExecuteScalar] received From client [%s].", getClietIP(ctx))
+
+	return executeScalar(req)
 }
 
 func (s *server) ExecuteDataSet(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
-	log.Println("RPC call [ExecuteNoneQuery] received.")
-
-	clientIP, err := getClietIP(ctx)
-
+	log.Printf("RPC call [ExecuteDataSet] received From client [%s].", getClietIP(ctx))
 	msg := ""
 	result := true
-	if err != nil {
-		msg = err.Error()
-	}
-
-	log.Printf("From client %s ", clientIP)
 
 	response, errE := executeDbRequest(req)
 
@@ -75,17 +65,21 @@ func (s *server) ExecuteDataSet(ctx context.Context, req *rda.DbRequest) (*rda.D
 	return response, nil
 }
 
-func getClietIP(ctx context.Context) (string, error) {
+func getClietIP(ctx context.Context) string {
 	pr, ok := peer.FromContext(ctx)
 
 	if !ok {
-		return "", fmt.Errorf("[getClinetIP] invoke FromContext() failed")
+		log.Println("[getClinetIP] invoke FromContext() failed")
+		return ""
 	}
 	if pr.Addr == net.Addr(nil) {
-		return "", fmt.Errorf("[getClientIP] peer.Addr is nil")
+		log.Println("[getClientIP] peer.Addr is nil")
+		return ""
 	}
+
 	addSlice := strings.Split(pr.Addr.String(), ":")
-	return addSlice[0], nil
+
+	return addSlice[0]
 }
 
 func dumpRemoteDbRequest(req *rda.DbRequest) {
@@ -107,6 +101,18 @@ func buildConnectionString(req *rda.DbRequest) (string, error) {
 	return conn, nil
 }
 
+func pingServer(db *sql.DB) error {
+	log.Printf("Sending ping to SQL Server ...")
+	err := db.Ping()
+	if err != nil {
+		log.Printf("Failed to sending ping due to: %s", err.Error())
+		return err
+	}
+	log.Println("Ping succeeded")
+
+	return nil
+}
+
 func openConnection(connectionString string) (*sql.DB, error) {
 
 	log.Printf("Connecting to %s", connectionString)
@@ -115,17 +121,75 @@ func openConnection(connectionString string) (*sql.DB, error) {
 		log.Println("Cannot connect: ", err.Error())
 		return nil, err
 	}
-
 	log.Println("Connected")
-	log.Printf("Sending ping to SQL Server ...")
-	err = db.Ping()
-	if err != nil {
-		fmt.Println("Cannot connect: ", err.Error())
-		return nil, err
-	}
-	log.Println("Ping succeeded")
+
+	err = pingServer(db)
+
+	log.Printf("Current open connections: %d", db.Stats().OpenConnections)
 
 	return db, nil
+}
+
+func logAndFailOnError(prefix string, description string, err error) {
+	if err != nil {
+		log.Printf("[%s] %s: %s", prefix, description, err)
+		panic(err)
+	}
+}
+
+func executeScalar(req *rda.DbRequest) (*rda.DbResponse, error) {
+	connectionString, _ := buildConnectionString(req)
+	db, err := openConnection(connectionString)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare(req.SqlStatement)
+	logAndFailOnError("executeScalar", "Prepare SQL statement failed", err)
+	defer stmt.Close()
+
+	query, err := stmt.Query()
+	logAndFailOnError("executeScalar", "Query failed", err)
+
+	columns, err := query.Columns()
+	logAndFailOnError("executeScalar", "Failed to get Columns from query", err)
+
+	log.Printf("%d columns in the query.", len(columns))
+
+	response := rda.DbResponse{
+		Succeeded: true,
+		Message:   " ",
+	}
+
+	columnCount := len(columns)
+	for query.Next() {
+		log.Println("Processing query result...")
+		// Since the query.Scan(dest ...interface{}) takes
+		// a slice of pointer, we need to create two slice
+		// one for actual values, and one for the pointer to
+		// each actual values. Just pass the pointer slice
+		// to scan method to make things work.
+		values := make([]interface{}, columnCount)
+		valuePtrs := make([]interface{}, columnCount)
+		// Store the address of each value in values slice into
+		// corresponding element of valuePtrs slice
+		for i := 0; i < columnCount; i++ {
+			valuePtrs[i] = &values[i]
+		}
+
+		err = query.Scan(valuePtrs...)
+
+		if err != nil {
+			log.Fatal("Scan failed:", err)
+		}
+
+		log.Println(values)
+
+		//response.ScalarValue, _ = ptypes.MarshalAny(values[0])
+	}
+
+	return &response, nil
 }
 
 // Execute the remote Db request

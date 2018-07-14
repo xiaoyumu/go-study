@@ -16,8 +16,9 @@ const (
 func main() {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
+
 	if err != nil {
-		log.Fatalf("Could not connect: %v", err)
+		log.Fatalf("Failed to connect to remove server: %v", err)
 	}
 	defer conn.Close()
 	c := rda.NewRemoteDBServiceClient(conn)
@@ -26,19 +27,24 @@ func main() {
 	defer cancel()
 
 	// dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
-	response, err := c.ExecuteDataSet(ctx, &rda.DbRequest{
-		ServerInfo: &rda.ServerInfo{
-			Server:   "192.168.1.154",
-			Port:     1433,
-			UserId:   "dev",
-			Password: "d3v",
-			Database: "godemo",
-		},
+	response, err := c.ExecuteScalar(ctx, &rda.DbRequest{
+		ServerInfo:   getServerInfo(),
 		SqlStatement: "SELECT GETDATE()",
 	})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.Fatalf("Faild to call remote DB service : %v", err)
 	}
 	log.Printf("Remote Result is : %v", response.Succeeded)
 	log.Printf("Remote Message is : %s", response.Message)
+	log.Printf("Remote ScalarValue is : %v", response.ScalarValue)
+}
+
+func getServerInfo() *rda.ServerInfo {
+	return &rda.ServerInfo{
+		Server:   "192.168.1.154",
+		Port:     1433,
+		UserId:   "dev",
+		Password: "d3v",
+		Database: "godemo",
+	}
 }
