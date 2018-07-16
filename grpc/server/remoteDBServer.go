@@ -186,11 +186,7 @@ func executeScalar(req *rda.DbRequest) (*rda.DbResponse, error) {
 
 		log.Println(values)
 
-		dbValue := ToDBValue(&values[0])
-
-		anything, err := dbValue.ToAny()
-		logAndFailOnError("ConvertDBValue", "Failed to concert DB value to any.Any ", err)
-		response.ScalarValue = anything
+		response.ScalarValue = ToDBValue(&values[0])
 	}
 
 	return &response, nil

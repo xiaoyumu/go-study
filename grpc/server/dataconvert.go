@@ -1,37 +1,55 @@
 package main
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
+	rda "github.com/xiaoyumu/go-study/grpc/proto"
 )
-
-// DBValue represent any value from DB
-type DBValue struct {
-	value *interface{}
-}
 
 const defaultMessageTypePrefix string = "fish/"
 
-// ToDBValue function wrap any value  into a DBValue
-func ToDBValue(value *interface{}) *DBValue {
-	return &DBValue{
-		value: value,
+// ToDBValue function wrap any value into a DBValue
+func ToDBValue(value *interface{}) *rda.DBValue {
+
+	anyValue, err := toAny(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return &rda.DBValue{
+		ValueType: fmt.Sprint(reflect.TypeOf(*value)),
+		Value:     anyValue,
 	}
 }
 
 // ToAny converts DBValue to any.Any without customized prefix
-func (dbv *DBValue) ToAny() (*any.Any, error) {
-	return dbv.ToAnyWithPrefix(defaultMessageTypePrefix)
+func toAny(value *interface{}) (*any.Any, error) {
+	return toAnyWithPrefix(value, defaultMessageTypePrefix)
 }
 
 // ToAnyWithPrefix converts DBValue to any.Any, support customized prefix
-func (dbv *DBValue) ToAnyWithPrefix(messageTypePreix string) (*any.Any, error) {
-	if v, ok := (*dbv.value).(time.Time); ok {
+func toAnyWithPrefix(value *interface{}, messageTypePreix string) (*any.Any, error) {
+	if v, ok := (*value).(time.Time); ok {
 		return timeToAny(v, messageTypePreix)
 	}
+
+	if v, ok := (*value).(int64); ok {
+		return int64ToAny(v, messageTypePreix)
+	}
+
+	return nil, nil
+}
+
+func int64ToAny(v int64, messageTypePreix string) (*any.Any, error) {
+	/*
+		if serialized, err := proto.Marshal(proto.Int64(v)); err != nil {
+			return nil, err
+		}*/
 	return nil, nil
 }
 

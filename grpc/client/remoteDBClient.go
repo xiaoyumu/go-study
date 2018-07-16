@@ -43,22 +43,27 @@ func main() {
 	log.Printf("Remote Message is : %s", response.Message)
 	log.Printf("Remote ScalarValue is : %v", response.ScalarValue)
 
-	if response.ScalarValue != nil {
-		var dynamicValue ptypes.DynamicAny
-
-		// The second parameter of ptypes.UnmarshalAny() method should be an address
-		// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
-		// throw with message:
-		//    mismatched message type: got "google.protobuf.Timestamp" want ""
-		if err := ptypes.UnmarshalAny(response.ScalarValue, &dynamicValue); err != nil {
-			log.Println("Failed to unmarshal Any due to " + err.Error())
-			os.Exit(-1)
-		}
-		if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
-			time, _ := ptypes.Timestamp(ts)
-			log.Println(time)
-		}
+	if response.ScalarValue == nil {
+		log.Println("ScalerValue is nil in the response.")
+		return
 	}
+
+	var dynamicValue ptypes.DynamicAny
+
+	// The second parameter of ptypes.UnmarshalAny() method should be an address
+	// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
+	// throw with message:
+	//    mismatched message type: got "google.protobuf.Timestamp" want ""
+	if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
+		log.Println("Failed to unmarshal Any due to " + err.Error())
+		os.Exit(-1)
+	}
+
+	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
+		time, _ := ptypes.Timestamp(ts)
+		log.Println(time)
+	}
+
 }
 
 func getServerInfo() *rda.ServerInfo {
