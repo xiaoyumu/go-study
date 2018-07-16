@@ -44,7 +44,7 @@ message ServerInfo {
 message DbResponse {
     bool succeeded = 1;
     string message = 2;
-    google.protobuf.Any scalarValue = 3;
+    DBValue scalarValue = 3;
     int32 rowEffected = 4;
     DataSet dataset = 5;
 }
@@ -82,5 +82,10 @@ message DataColumn {
 }
 
 message DataRow {
-    repeated google.protobuf.Any values = 1;
+    repeated DBValue values = 1;
+}
+
+message DBValue{
+    string valueType = 1;
+    google.protobuf.Any value = 2;
 }
