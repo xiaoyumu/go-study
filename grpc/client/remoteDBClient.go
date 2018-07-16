@@ -31,17 +31,50 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
-	response, err := c.ExecuteScalar(ctx, &rda.DbRequest{
+	tryExecuteDataSet(c, ctx)
+
+}
+
+func getServerInfo() *rda.ServerInfo {
+	return &rda.ServerInfo{
+		Server:   "192.168.1.154",
+		Port:     1433,
+		UserId:   "dev",
+		Password: "d3v",
+		Database: "godemo",
+	}
+}
+
+func tryExecuteDataSet(client rda.RemoteDBServiceClient, ctx context.Context) {
+	response, err := client.ExecuteDataSet(ctx, &rda.DbRequest{
 		ServerInfo:   getServerInfo(),
-		SqlStatement: "SELECT GETDATE()",
+		SqlStatement: "SELECT GETDATE(), 1 AS Value, null AS ValueNull",
 	})
+	logFatal(err)
+	dumpRemoteResponse(response)
+}
+
+func logFatal(err error) {
 	if err != nil {
 		log.Fatalf("Faild to call remote DB service : %v", err)
 	}
+}
+
+func dumpRemoteResponse(response *rda.DbResponse) {
 	log.Printf("Remote Result is : %v", response.Succeeded)
 	log.Printf("Remote Message is : %s", response.Message)
 	log.Printf("Remote ScalarValue is : %v", response.ScalarValue)
+	log.Printf("Remote Dataset is : %v", response.Dataset)
+}
+
+func tryExecuteScalar(client rda.RemoteDBServiceClient, ctx context.Context) {
+	response, err := client.ExecuteScalar(ctx, &rda.DbRequest{
+		ServerInfo:   getServerInfo(),
+		SqlStatement: "SELECT GETDATE(), 1",
+	})
+	logFatal(err)
+
+	dumpRemoteResponse(response)
 
 	if response.ScalarValue == nil {
 		log.Println("ScalerValue is nil in the response.")
@@ -62,16 +95,5 @@ func main() {
 	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
 		time, _ := ptypes.Timestamp(ts)
 		log.Println(time)
-	}
-
-}
-
-func getServerInfo() *rda.ServerInfo {
-	return &rda.ServerInfo{
-		Server:   "192.168.1.154",
-		Port:     1433,
-		UserId:   "dev",
-		Password: "d3v",
-		Database: "godemo",
 	}
 }

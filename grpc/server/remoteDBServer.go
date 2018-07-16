@@ -208,14 +208,6 @@ func executeDbRequest(req *rda.DbRequest) (*rda.DbResponse, error) {
 		os.Exit(-1)
 	}
 
-	for _, table := range ds.Tables {
-		log.Printf("Dumping table %s", table.Name)
-		//log.Println(table.Columns)
-		for _, row := range table.Rows {
-			log.Println(row.Values)
-		}
-	}
-
 	response := rda.DbResponse{
 		Dataset: ds,
 	}
@@ -290,11 +282,20 @@ func addTable(ds *rda.DataSet, table *rda.DataTable) {
 }
 
 func addRow(dt *rda.DataTable, rowValues []interface{}) {
-	row := rda.DataRow{
-		//ParentTable: dt,
-		//Values: rowValues,
+	row := rda.DataRow{ 
+		Values: toDBValues(rowValues),
 	}
 	dt.Rows = append(dt.Rows, &row)
+}
+
+func toDBValues(rowValues []interface{}) []*rda.DBValue {
+	dbValues := make([]*rda.DBValue, len(rowValues))
+
+	for i := range rowValues {
+		dbValues[i] = ToDBValue(&rowValues[i])
+	}
+
+	return dbValues
 }
 
 func createTable(query *sql.Rows) (*rda.DataTable, []string, error) {
