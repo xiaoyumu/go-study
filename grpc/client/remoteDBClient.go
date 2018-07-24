@@ -31,7 +31,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	tryExecuteDataSet(c, ctx)
+	tryExecuteDataSet(ctx, c)
 
 }
 
@@ -45,13 +45,38 @@ func getServerInfo() *rda.ServerInfo {
 	}
 }
 
-func tryExecuteDataSet(client rda.RemoteDBServiceClient, ctx context.Context) {
+func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
 	response, err := client.ExecuteDataSet(ctx, &rda.DbRequest{
 		ServerInfo:   getServerInfo(),
 		SqlStatement: "SELECT GETDATE(), 1 AS Value, null AS ValueNull",
 	})
 	logFatal(err)
-	dumpRemoteResponse(response)
+
+	if response.Succeeded {
+		log.Println("Remote call succeeded.")
+	} else {
+		log.Printf("Remote call failed due to %s.", response.Message)
+	}
+
+	ds := response.Dataset
+
+	tables := ds.GetTables()
+	log.Printf("Total %d tables in the returned data set.", len(tables))
+
+	for i, table := range tables {
+		log.Printf("Dumping table %s index %d", table.GetName(), i)
+		for j, row := range table.GetRows() {
+			log.Printf("  Dumping Row[%d]", j)
+			for k, cell := range row.GetValues() {
+				valueObject := cell.GetValue() // Any
+				valueType := cell.GetValueType()
+				log.Printf("    Cell[%d]: DataType: %s", k, valueType)
+				log.Printf("         Any: type_url: %s", valueObject.GetTypeUrl())
+				log.Printf("                 Value: %v", valueObject.GetValue())
+			}
+		}
+	}
+
 }
 
 func logFatal(err error) {
@@ -67,8 +92,39 @@ func dumpRemoteResponse(response *rda.DbResponse) {
 	log.Printf("Remote Dataset is : %v", response.Dataset)
 }
 
-func tryExecuteScalar(client rda.RemoteDBServiceClient, ctx context.Context) {
+func tryExecuteScalar(ctx context.Context, client rda.RemoteDBServiceClient) {
 	response, err := client.ExecuteScalar(ctx, &rda.DbRequest{
+		ServerInfo:   getServerInfo(),
+		SqlStatement: "SELECT GETDATE(), 1",
+	})
+	logFatal(err)
+
+	dumpRemoteResponse(response)
+
+	if response.ScalarValue == nil {
+		log.Println("ScalerValue is nil in the response.")
+		return
+	}
+
+	var dynamicValue ptypes.DynamicAny
+
+	// The second parameter of ptypes.UnmarshalAny() method should be an address
+	// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
+	// throw with message:
+	//    mismatched message type: got "google.protobuf.Timestamp" want ""
+	if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
+		log.Println("Failed to unmarshal Any due to " + err.Error())
+		os.Exit(-1)
+	}
+
+	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
+		time, _ := ptypes.Timestamp(ts)
+		log.Println(time)
+	}
+}
+
+func tryExecuteNoneQuery(ctx context.Context, client rda.RemoteDBServiceClient) {
+	response, err := client.ExecuteNoneQuery(ctx, &rda.DbRequest{
 		ServerInfo:   getServerInfo(),
 		SqlStatement: "SELECT GETDATE(), 1",
 	})
