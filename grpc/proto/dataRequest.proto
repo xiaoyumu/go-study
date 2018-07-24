@@ -6,7 +6,7 @@ $ protoc dataRequest.proto --go_out=plugins=grpc:.
 */
 syntax = "proto3";
 
-package remoteDataAccess;
+package proto;
  
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
