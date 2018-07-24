@@ -9,6 +9,7 @@ syntax = "proto3";
 package remoteDataAccess;
  
 import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 option java_package = "fish.grpc.rda";
@@ -44,7 +45,7 @@ message ServerInfo {
 message DbResponse {
     bool succeeded = 1;
     string message = 2;
-    DBValue scalarValue = 3;
+    DBAnyValue scalarValue = 3;
     int32 rowEffected = 4;
     DataSet dataset = 5;
 }
@@ -81,11 +82,155 @@ message DataColumn {
 
 }
 
-message DataRow {
-    repeated DBValue values = 1;
+message DataRow {    
+    DBSignedFixed32Collection sfixed32Collection = 1;
+    DBSignedFixed64Collection sfixed64Collection = 2;
+    DBBooleanCollection booleanCollection = 3;
+    DBStringCollection stringCollection = 4;
+    DBSInt32Collection sint32Collection = 5;
+    DBSInt64Collection sint64Collection = 6;
+    DBUInt32Collection uint32Collection = 7;
+    DBUInt64Collection uint64Collection = 8;
+    DBInt32Collection int32Collection = 9;
+    DBInt64Collection int64Collection = 10;
+    DBBytesCollection bytesCollection = 11;
+    DBFloatCollection floatCollection = 12;
+    DBDoubleCollection doubleCollection = 13;
+    DBAnyCollection anyCollection = 14;
 }
 
-message DBValue{
+message DBAnyCollection{
+    repeated DBAnyValue values = 1;
+}
+
+message DBAnyValue{
     string valueType = 1;
     google.protobuf.Any value = 2;
 }
+
+message DBInt32Collection{
+    repeated DBInt32Value values = 1;
+}
+
+message DBInt32Value{
+    int32 index = 1;
+    int32 value = 2;
+}
+
+message DBInt64Collection{
+    repeated DBInt64Value values = 1;
+}
+
+message DBInt64Value{
+    int32 index = 1;
+    int64 value = 2;
+}
+
+message DBSInt32Collection{
+    repeated DBSInt32Value values = 1;
+}
+
+message DBSInt32Value{
+    int32 index = 1;
+    sint32 value = 2;
+}
+
+message DBSInt64Collection{
+    repeated DBSInt64Value values = 1;
+}
+
+message DBSInt64Value{
+    int32 index = 1;
+    sint64 value = 2;
+}
+
+message DBUInt32Collection{
+    repeated DBUInt32Value values = 1;
+}
+
+message DBUInt32Value{
+    int32 index = 1;
+    uint32 value = 2;
+}
+
+message DBUInt64Collection{
+    repeated DBUInt64Value values = 1;
+}
+
+message DBUInt64Value{
+    int32 index = 1;
+    uint64 value = 2;
+}
+
+message DBSignedFixed32Collection{
+    repeated DBSignedFixed32Value values = 1;
+}
+
+message DBSignedFixed32Value{
+    int32 index = 1;
+    sfixed32 value = 2;
+}
+
+message DBSignedFixed64Collection{
+    repeated DBSignedFixed64Value values = 1;
+}
+
+message DBSignedFixed64Value{
+    int32 index = 1;
+    sfixed64 value = 2;
+}
+
+message DBBooleanCollection{
+    repeated DBBooleanValue values = 1;
+}
+
+message DBBooleanValue{
+    int32 index = 1;
+    bool value = 2;
+}
+
+message DBStringCollection{
+    repeated DBStringValue values = 1;
+}
+
+message DBStringValue{
+    int32 index = 1;
+    string value = 2;
+}
+
+message DBBytesCollection{
+    repeated DBBytesValue values = 1;
+}
+
+message DBBytesValue{
+    int32 index = 1;
+    bytes value = 2;
+}
+
+message DBDateTimeCollection{
+    repeated DBDateTimeValue values = 1;
+}
+
+message DBDateTimeValue{
+    int32 index = 1;
+    google.protobuf.Timestamp value = 2;
+}
+
+message DBFloatCollection{
+    repeated DBFloatValue values = 1;
+}
+
+message DBFloatValue{
+    int32 index = 1;
+    float value = 2;
+}
+
+message DBDoubleCollection{
+    repeated DBDoubleValue values = 1;
+}
+
+message DBDoubleValue{
+    int32 index = 1;
+    double value = 2;
+}
+
