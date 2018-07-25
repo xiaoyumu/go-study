@@ -186,7 +186,7 @@ func executeScalar(req *rda.DbRequest) (*rda.DbResponse, error) {
 
 		log.Println(values)
 
-		response.ScalarValue = ToDBValue(&values[0])
+		response.ScalarValue, _ = ToDBValue(0, &values[0])
 	}
 
 	return &response, nil
@@ -282,7 +282,7 @@ func addTable(ds *rda.DataSet, table *rda.DataTable) {
 }
 
 func addRow(dt *rda.DataTable, rowValues []interface{}) {
-	row := rda.DataRow{ 
+	row := rda.DataRow{
 		Values: toDBValues(rowValues),
 	}
 	dt.Rows = append(dt.Rows, &row)
@@ -291,8 +291,9 @@ func addRow(dt *rda.DataTable, rowValues []interface{}) {
 func toDBValues(rowValues []interface{}) []*rda.DBValue {
 	dbValues := make([]*rda.DBValue, len(rowValues))
 
-	for i := range rowValues {
-		dbValues[i] = ToDBValue(&rowValues[i])
+	for index, value := range rowValues {
+		dbvalue, _ := ToDBValue(int32(index), &value)
+		dbValues[index] = dbvalue
 	}
 
 	return dbValues

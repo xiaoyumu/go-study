@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -68,11 +67,10 @@ func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
 		for j, row := range table.GetRows() {
 			log.Printf("  Dumping Row[%d]", j)
 			for k, cell := range row.GetValues() {
-				valueObject := cell.GetValue() // Any
-				valueType := cell.GetValueType()
-				log.Printf("    Cell[%d]: DataType: %s", k, valueType)
-				log.Printf("         Any: type_url: %s", valueObject.GetTypeUrl())
-				log.Printf("                 Value: %v", valueObject.GetValue())
+				column := table.Columns[k]
+				valueObject := cell.GetValue() // bytes
+				valueType := column.GetType()
+				log.Printf("    Cell[%d]: DataType: %s Value: %v", k, valueType, valueObject)
 			}
 		}
 	}
@@ -112,10 +110,12 @@ func tryExecuteScalar(ctx context.Context, client rda.RemoteDBServiceClient) {
 	// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
 	// throw with message:
 	//    mismatched message type: got "google.protobuf.Timestamp" want ""
-	if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
-		log.Println("Failed to unmarshal Any due to " + err.Error())
-		os.Exit(-1)
-	}
+
+	/*
+		if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
+			log.Println("Failed to unmarshal Any due to " + err.Error())
+			os.Exit(-1)
+		}*/
 
 	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
 		time, _ := ptypes.Timestamp(ts)
@@ -143,10 +143,11 @@ func tryExecuteNoneQuery(ctx context.Context, client rda.RemoteDBServiceClient) 
 	// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
 	// throw with message:
 	//    mismatched message type: got "google.protobuf.Timestamp" want ""
-	if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
-		log.Println("Failed to unmarshal Any due to " + err.Error())
-		os.Exit(-1)
-	}
+	/*
+		if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
+			log.Println("Failed to unmarshal Any due to " + err.Error())
+			os.Exit(-1)
+		}*/
 
 	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
 		time, _ := ptypes.Timestamp(ts)

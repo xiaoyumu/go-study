@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"reflect"
 	"time"
+
+	"github.com/Kelindar/binary"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -14,17 +14,16 @@ import (
 const defaultMessageTypePrefix string = "fish/"
 
 // ToDBValue function wrap any value into a DBValue
-func ToDBValue(value *interface{}) *rda.DBValue {
-
-	anyValue, err := toAny(value)
+func ToDBValue(index int32, value *interface{}) (*rda.DBValue, error) {
+	valueBytes, err := binary.Marshal(value)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &rda.DBValue{
-		ValueType: fmt.Sprint(reflect.TypeOf(*value)),
-		Value:     anyValue,
-	}
+		Index: index,
+		Value: valueBytes,
+	}, nil
 }
 
 // ToAny converts DBValue to any.Any without customized prefix
@@ -50,6 +49,7 @@ func int64ToAny(v int64, messageTypePreix string) (*any.Any, error) {
 		if serialized, err := proto.Marshal(proto.Int64(v)); err != nil {
 			return nil, err
 		}*/
+
 	return nil, nil
 }
 
