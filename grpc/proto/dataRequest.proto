@@ -91,7 +91,8 @@ message DataRow {
 }
 
 message DBValue{
-    bytes value = 1;
+    int32 index = 1;
+    bytes value = 2;
 }
 
 
