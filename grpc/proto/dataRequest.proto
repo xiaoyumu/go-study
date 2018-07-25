@@ -7,9 +7,11 @@ $ protoc dataRequest.proto --go_out=plugins=grpc:.
 syntax = "proto3";
 
 package proto;
- 
+
+/*
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
+*/
 
 option java_multiple_files = true;
 option java_package = "fish.grpc.rda";
@@ -45,9 +47,10 @@ message ServerInfo {
 message DbResponse {
     bool succeeded = 1;
     string message = 2;
-    DBAnyValue scalarValue = 3;
-    int32 rowEffected = 4;
-    DataSet dataset = 5;
+    string scalarValueType = 3;
+    DBValue scalarValue = 4;
+    int32 rowEffected = 5;
+    DataSet dataset = 6;
 }
 
 message DataSet {
@@ -65,9 +68,11 @@ message DataTable {
 }
 
 message DataColumn {
+    // Zero based column index in the DB record set
+    int32 index = 1;
 
     // The name of the column
-    string name = 1;
+    string name = 2;
 
     // The db type of the column    
     string dbType = 3;
@@ -75,14 +80,22 @@ message DataColumn {
     // The db size
     int32 dbSize = 4;
 
-
-    int32 precision = 5;
-
-    int32 index = 6;
-
+    // golang type
+    string type = 5;
+  
+    int32 precision = 6;
 }
 
 message DataRow {    
+    repeated DBValue values = 1; 
+}
+
+message DBValue{
+    bytes value = 1;
+}
+
+
+/*
     DBSignedFixed32Collection sfixed32Collection = 1;
     DBSignedFixed64Collection sfixed64Collection = 2;
     DBBooleanCollection booleanCollection = 3;
@@ -97,7 +110,8 @@ message DataRow {
     DBFloatCollection floatCollection = 12;
     DBDoubleCollection doubleCollection = 13;
     DBAnyCollection anyCollection = 14;
-}
+
+
 
 message DBAnyCollection{
     repeated DBAnyValue values = 1;
@@ -234,3 +248,4 @@ message DBDoubleValue{
     double value = 2;
 }
 
+*/
