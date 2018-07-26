@@ -22,44 +22,34 @@ const (
 
 type server struct{}
 
-/*
-    ExecuteNoneQuery(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
-	ExecuteScalar(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
-	ExecuteDataSet(ctx context.Context, in *DbRequest, opts ...grpc.CallOption) (*DbResponse, error)
-*/
-
-func (s *server) ExecuteNoneQuery(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
+func (s *server) ExecuteNoneQuery(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
 	log.Printf("RPC call [ExecuteNoneQuery] received From client [%s].", getClietIP(ctx))
-	return &rda.DbResponse{
+	return &rda.DBResponse{
 		Succeeded: false,
 		Message:   "ExecuteNoneQuery was not implemented yet",
 	}, nil
 }
 
-func (s *server) ExecuteScalar(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
+func (s *server) ExecuteScalar(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
 	log.Printf("RPC call [ExecuteScalar] received From client [%s].", getClietIP(ctx))
 
-	return executeScalar(req)
+	return &rda.DBResponse{
+		Succeeded: false,
+		Message:   "ExecuteScalar was not implemented yet",
+	}, nil
 }
 
-func (s *server) ExecuteDataSet(ctx context.Context, req *rda.DbRequest) (*rda.DbResponse, error) {
+func (s *server) ExecuteDataSet(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
 	log.Printf("RPC call [ExecuteDataSet] received From client [%s].", getClietIP(ctx))
-	msg := ""
-	result := true
-
-	response, errE := executeDbRequest(req)
-
-	if errE != nil {
-		msg = errE.Error()
+	response := &rda.DBResponse{
+		Succeeded: false,
 	}
 
-	if response == nil {
-		response = &rda.DbResponse{
-			Succeeded: false,
-			Message:   msg,
-		}
+	if ds, err := executeDataSet(req); err != nil {
+		response.Message = err.Error()		
 	} else {
-		response.Succeeded = result
+		response.Succeeded = true
+		response.Dataset = ds
 	}
 
 	return response, nil
@@ -82,14 +72,14 @@ func getClietIP(ctx context.Context) string {
 	return addSlice[0]
 }
 
-func dumpRemoteDbRequest(req *rda.DbRequest) {
+func dumpRemoteDbRequest(req *rda.DBRequest) {
 	connStr, _ := buildConnectionString(req)
 
 	log.Printf("Dumping request : %s ...", connStr)
 	log.Printf("SQL:%s", req.SqlStatement)
 }
 
-func buildConnectionString(req *rda.DbRequest) (string, error) {
+func buildConnectionString(req *rda.DBRequest) (string, error) {
 	// Sample Connection string:
 	// sqlserver://dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
 	conn := fmt.Sprintf("sqlserver://%s:%s@%s:%v?database=%s&connection+timeout=30",
@@ -101,35 +91,6 @@ func buildConnectionString(req *rda.DbRequest) (string, error) {
 	return conn, nil
 }
 
-func pingServer(db *sql.DB) error {
-	log.Printf("Sending ping to SQL Server ...")
-	err := db.Ping()
-	if err != nil {
-		log.Printf("Failed to sending ping due to: %s", err.Error())
-		return err
-	}
-	log.Println("Ping succeeded")
-
-	return nil
-}
-
-func openConnection(connectionString string) (*sql.DB, error) {
-
-	log.Printf("Connecting to %s", connectionString)
-	db, err := sql.Open("mssql", connectionString)
-	if err != nil {
-		log.Println("Cannot connect: ", err.Error())
-		return nil, err
-	}
-	log.Println("Connected")
-
-	err = pingServer(db)
-
-	log.Printf("Current open connections: %d", db.Stats().OpenConnections)
-
-	return db, nil
-}
-
 func logAndFailOnError(prefix string, description string, err error) {
 	if err != nil {
 		log.Printf("[%s] %s: %s", prefix, description, err)
@@ -137,9 +98,11 @@ func logAndFailOnError(prefix string, description string, err error) {
 	}
 }
 
-func executeScalar(req *rda.DbRequest) (*rda.DbResponse, error) {
+/*
+func executeScalar(req *rda.DBRequest) (*rda.DBResponse, error) {
 	connectionString, _ := buildConnectionString(req)
-	db, err := openConnection(connectionString)
+	conMgr := GetConnectionManager()
+	db, err := conMgr.GetConnection(connectionString)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +120,7 @@ func executeScalar(req *rda.DbRequest) (*rda.DbResponse, error) {
 
 	log.Printf("%d columns in the query.", len(columns))
 
-	response := rda.DbResponse{
+	response := rda.DBResponse{
 		Succeeded: true,
 		Message:   " ",
 	}
@@ -190,79 +153,53 @@ func executeScalar(req *rda.DbRequest) (*rda.DbResponse, error) {
 	}
 
 	return &response, nil
-}
+}*/
 
-// Execute the remote Db request
-func executeDbRequest(req *rda.DbRequest) (*rda.DbResponse, error) {
+// Execute the remote Db request 
+func executeDataSet(req *rda.DBRequest) (*rda.DataSet, error) {
+
 	connectionString, _ := buildConnectionString(req)
-	db, err := openConnection(connectionString)
+	conMgr := GetConnectionManager()
+	db, err := conMgr.GetConnection(connectionString)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
 
-	ds := executeDataSet(db, req.SqlStatement)
-
-	if ds == nil {
-		log.Printf("Failed to executeDataSet.")
-		os.Exit(-1)
-	}
-
-	response := rda.DbResponse{
-		Dataset: ds,
-	}
-
-	return &response, nil
-}
-
-func executeDataSet(db *sql.DB, sqlStatement string) *rda.DataSet {
-
-	dataSet := rda.DataSet{
-		Tables: []*rda.DataTable{},
-	}
-
-	stmt, err := db.Prepare(sqlStatement)
+	stmt, err := db.Prepare(req.SqlStatement)
 	if err != nil {
-		log.Fatal("Prepare Statement failed:", err)
-		panic(err)
+		return nil, err
 	}
 	defer stmt.Close()
 
+	dataSet := &rda.DataSet{
+		Tables: []*rda.DataTable{},
+	}
+
 	query, err := stmt.Query()
 	if err != nil {
-		log.Fatal("Query failed:", err)
-		panic(err)
+		return nil, err		
 	}
 
 	for {
-
-		table, columns, err := createTable(query)
-		columnCount := len(columns)
+		table, err := createTable(query) 
 		for query.Next() {
 			// Since the query.Scan(dest ...interface{}) takes
 			// a slice of pointer, we need to create two slice
 			// one for actual values, and one for the pointer to
 			// each actual values. Just pass the pointer slice
-			// to scan method to make things work.
-			values := make([]interface{}, columnCount)
-			valuePtrs := make([]interface{}, columnCount)
-			// Store the address of each value in values slice into
-			// corresponding element of valuePtrs slice
-			for i := 0; i < columnCount; i++ {
-				valuePtrs[i] = &values[i]
-			}
-
+			// to scan method to make things work.			
+			values, valuePtrs := table.InitValueSlots()
 			err = query.Scan(valuePtrs...)
-
 			if err != nil {
-				log.Fatal("Scan failed:", err)
+				log.Println("Scan failed:", err)
+				return nil, err
 			}
 
-			addRow(table, values)
+			table.AddRow(values)
 		}
 
 		// Add Current table into this data set
-		addTable(&dataSet, table)
+		dataSet.AddTable(table)
 
 		// If no more result set found in this query
 		// finish execution
@@ -270,48 +207,40 @@ func executeDataSet(db *sql.DB, sqlStatement string) *rda.DataSet {
 			break
 		}
 	}
-	return &dataSet
+	return dataSet, nil	
 }
+ 
+func createTable(query *sql.Rows) (*rda.DataTable, error) {
+	columnTypes, _ := query.ColumnTypes()
 
-func addTable(ds *rda.DataSet, table *rda.DataTable) {
-
-	if len(table.Name) == 0 {
-		table.Name = fmt.Sprintf("Table_%v", len(ds.Tables)+1)
-	}
-	ds.Tables = append(ds.Tables, table)
-}
-
-func addRow(dt *rda.DataTable, rowValues []interface{}) {
-	row := rda.DataRow{
-		Values: toDBValues(rowValues),
-	}
-	dt.Rows = append(dt.Rows, &row)
-}
-
-func toDBValues(rowValues []interface{}) []*rda.DBValue {
-	dbValues := make([]*rda.DBValue, len(rowValues))
-
-	for index, value := range rowValues {
-		dbvalue, _ := ToDBValue(int32(index), &value)
-		dbValues[index] = dbvalue
+	table := &rda.DataTable{
+		Columns: make([]*rda.DataColumn, len(columnTypes)),
+		Rows:    make([]*rda.DataRow, 0, 10),
 	}
 
-	return dbValues
-}
+	for i:=0;i<len(columnTypes);i++{ 
+		columnType := columnTypes[i]
+		
+		column := &rda.DataColumn{
+			Index : int32(i),
+			Name : columnType.Name(),
+			DbType: columnType.DatabaseTypeName(),		
+			Type: columnType.ScanType().String(),
+		}
 
-func createTable(query *sql.Rows) (*rda.DataTable, []string, error) {
-	columns, _ := query.Columns()
-	//columnTypes, _ := query.ColumnTypes()
-	//colCount := len(columns)
-	table := rda.DataTable{
-		//Columns:     make([]string, colCount),
-		//ColumnCount: colCount,
-		//Rows: []DataRow{},
+		if length, ok := columnType.Length(); ok{
+			column.Length = length
+		}
+
+		if precision, scale, ok := columnType.DecimalSize(); ok{
+			column.Precision = precision
+			column.Scale = scale
+		}
+
+		table.Columns[i] = column
 	}
-
-	//table.Columns = columns
-
-	return &table, columns, nil
+ 
+	return table, nil
 }
 
 func main() {
