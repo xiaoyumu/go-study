@@ -18,12 +18,12 @@ option java_package = "fish.grpc.rda";
 option java_outer_classname = "RemoteDBServiceProto";
 
 service RemoteDBService{
-    rpc ExecuteNoneQuery(DbRequest) returns (DbResponse) {}
-    rpc ExecuteScalar(DbRequest) returns (DbResponse) {}
-    rpc ExecuteDataSet(DbRequest) returns (DbResponse) {}
+    rpc ExecuteNoneQuery(DBRequest) returns (DBResponse) {}
+    rpc ExecuteScalar(DBRequest) returns (DBResponse) {}
+    rpc ExecuteDataSet(DBRequest) returns (DBResponse) {}
 }
 
-message DbRequest {
+message DBRequest {
     // Token will be used to identify the server connection info    
     string token = 1;
     // Or the server connection info was given in the DbRequest
@@ -34,6 +34,16 @@ message DbRequest {
 
     // The plain text sql statement
     string sqlStatement = 4;
+
+    // Parameter list
+    repeated DBParameter parameters = 5;
+}
+
+message DBParameter{
+    string name = 1;
+    string dbType = 2;
+    int64 dbLength = 3;
+    string value = 4;
 }
 
 message ServerInfo {
@@ -44,13 +54,18 @@ message ServerInfo {
     string password = 5;
 }
 
-message DbResponse {
+message DBResponse {
     bool succeeded = 1;
     string message = 2;
-    string scalarValueType = 3;
-    DBValue scalarValue = 4;
-    int32 rowEffected = 5;
-    DataSet dataset = 6;
+
+    // For execute scalar operation
+    DBScalarValue scalarValue = 3;
+
+    // For execute none query operation
+    int32 rowEffected = 4;
+
+    // For execute execute dataset operation
+    DataSet dataset = 5;
 }
 
 message DataSet {
@@ -78,12 +93,17 @@ message DataColumn {
     string dbType = 3;
 
     // The db size
-    int32 dbSize = 4;
+    int64 length = 4;
 
     // golang type
     string type = 5;
   
-    int32 precision = 6;
+    // For decimal numeric type
+    int64 precision = 6;
+    int64 scale = 7;
+
+    // Indicate if the column is nullable
+    bool nullable = 8;
 }
 
 message DataRow {    
@@ -93,160 +113,10 @@ message DataRow {
 message DBValue{
     int32 index = 1;
     bytes value = 2;
+    //google.protobuf.Any value = 2;
 }
 
-
-/*
-    DBSignedFixed32Collection sfixed32Collection = 1;
-    DBSignedFixed64Collection sfixed64Collection = 2;
-    DBBooleanCollection booleanCollection = 3;
-    DBStringCollection stringCollection = 4;
-    DBSInt32Collection sint32Collection = 5;
-    DBSInt64Collection sint64Collection = 6;
-    DBUInt32Collection uint32Collection = 7;
-    DBUInt64Collection uint64Collection = 8;
-    DBInt32Collection int32Collection = 9;
-    DBInt64Collection int64Collection = 10;
-    DBBytesCollection bytesCollection = 11;
-    DBFloatCollection floatCollection = 12;
-    DBDoubleCollection doubleCollection = 13;
-    DBAnyCollection anyCollection = 14;
-
-
-
-message DBAnyCollection{
-    repeated DBAnyValue values = 1;
+message DBScalarValue{
+    DataColumn type = 1;
+    DBValue value = 2;
 }
-
-message DBAnyValue{
-    string valueType = 1;
-    google.protobuf.Any value = 2;
-}
-
-message DBInt32Collection{
-    repeated DBInt32Value values = 1;
-}
-
-message DBInt32Value{
-    int32 index = 1;
-    int32 value = 2;
-}
-
-message DBInt64Collection{
-    repeated DBInt64Value values = 1;
-}
-
-message DBInt64Value{
-    int32 index = 1;
-    int64 value = 2;
-}
-
-message DBSInt32Collection{
-    repeated DBSInt32Value values = 1;
-}
-
-message DBSInt32Value{
-    int32 index = 1;
-    sint32 value = 2;
-}
-
-message DBSInt64Collection{
-    repeated DBSInt64Value values = 1;
-}
-
-message DBSInt64Value{
-    int32 index = 1;
-    sint64 value = 2;
-}
-
-message DBUInt32Collection{
-    repeated DBUInt32Value values = 1;
-}
-
-message DBUInt32Value{
-    int32 index = 1;
-    uint32 value = 2;
-}
-
-message DBUInt64Collection{
-    repeated DBUInt64Value values = 1;
-}
-
-message DBUInt64Value{
-    int32 index = 1;
-    uint64 value = 2;
-}
-
-message DBSignedFixed32Collection{
-    repeated DBSignedFixed32Value values = 1;
-}
-
-message DBSignedFixed32Value{
-    int32 index = 1;
-    sfixed32 value = 2;
-}
-
-message DBSignedFixed64Collection{
-    repeated DBSignedFixed64Value values = 1;
-}
-
-message DBSignedFixed64Value{
-    int32 index = 1;
-    sfixed64 value = 2;
-}
-
-message DBBooleanCollection{
-    repeated DBBooleanValue values = 1;
-}
-
-message DBBooleanValue{
-    int32 index = 1;
-    bool value = 2;
-}
-
-message DBStringCollection{
-    repeated DBStringValue values = 1;
-}
-
-message DBStringValue{
-    int32 index = 1;
-    string value = 2;
-}
-
-message DBBytesCollection{
-    repeated DBBytesValue values = 1;
-}
-
-message DBBytesValue{
-    int32 index = 1;
-    bytes value = 2;
-}
-
-message DBDateTimeCollection{
-    repeated DBDateTimeValue values = 1;
-}
-
-message DBDateTimeValue{
-    int32 index = 1;
-    google.protobuf.Timestamp value = 2;
-}
-
-message DBFloatCollection{
-    repeated DBFloatValue values = 1;
-}
-
-message DBFloatValue{
-    int32 index = 1;
-    float value = 2;
-}
-
-message DBDoubleCollection{
-    repeated DBDoubleValue values = 1;
-}
-
-message DBDoubleValue{
-    int32 index = 1;
-    double value = 2;
-}
-
-*/
