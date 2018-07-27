@@ -41,24 +41,31 @@ func (bcm *BasicConnectionManager) GetConnection(connStr string) (*sql.DB, error
 		return nil, fmt.Errorf("the connStr parameter cannot be empty")
 	}
 
+	// Check if a connection already exists before lock it
 	conn, ok := bcm.connectionPool[connStr]
 	if ok {
+		// Reuse it if already exists
 		return conn, nil
 	}
 
+	// Now try to lock it for double check
 	bcm.mutex.Lock()
-	defer bcm.mutex.Unlock()
+	defer bcm.mutex.Unlock() // Release the lock after function returns
 
+	// Check again if the connection already exists in the pool
 	conn, ok = bcm.connectionPool[connStr]
 	if ok {
+		// Reuse it if already exists
 		return conn, nil
 	}
 
+	// Create a new one
 	newConn, err := bcm.openConnection(connStr)
 	if err != nil {
 		return nil, err
 	}
 
+	// Add the new connection to the pool
 	bcm.connectionPool[connStr] = newConn
 	return newConn, nil
 }
