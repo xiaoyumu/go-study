@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"log"
 	"sync"
+
+	rda "github.com/xiaoyumu/go-study/grpc/proto"
 )
 
 // ConnectionManager contains function definitions related to a connection pooling management
 type ConnectionManager interface {
 	// GetConnection returns a ptr to sql.DB based on given connection string
 	GetConnection(connStr string) (*sql.DB, error)
+	// BuildConnectionString builds connection string based on the DBRequest
+	BuildConnectionString(req *rda.DBRequest) (string, error)
 }
 
 // BasicConnectionManager is the basic connection pool implementation
@@ -68,6 +72,19 @@ func (bcm *BasicConnectionManager) GetConnection(connStr string) (*sql.DB, error
 	// Add the new connection to the pool
 	bcm.connectionPool[connStr] = newConn
 	return newConn, nil
+}
+
+// BuildConnectionString builds connection string based on the DBRequest
+func (bcm *BasicConnectionManager) BuildConnectionString(req *rda.DBRequest) (string, error) {
+	// Sample Connection string:
+	// sqlserver://dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
+	conn := fmt.Sprintf("sqlserver://%s:%s@%s:%v?database=%s&connection+timeout=30",
+		req.ServerInfo.UserId,
+		req.ServerInfo.Password,
+		req.ServerInfo.Server,
+		req.ServerInfo.Port,
+		req.ServerInfo.Database)
+	return conn, nil
 }
 
 func (bcm *BasicConnectionManager) openConnection(connectionString string) (*sql.DB, error) {

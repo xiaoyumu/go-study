@@ -1,61 +1,80 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net"
-	"os"
 	"strings"
+	"time"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	rda "github.com/xiaoyumu/go-study/grpc/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/reflection"
 )
 
-const (
-	port = ":50051"
-)
+// NewRdaServer creates the server instance
+func NewRdaServer() RdaServer {
+	return &BasicRdaServer{}
+}
 
-type server struct{}
+// The RdaServer defines the basic operations
+type RdaServer interface {
+	ExecuteNoneQuery(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error)
+	ExecuteScalar(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error)
+	ExecuteDataSet(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error)
+}
 
-func (s *server) ExecuteNoneQuery(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
-	log.Printf("RPC call [ExecuteNoneQuery] received From client [%s].", getClietIP(ctx))
+// BasicRdaServer implements the basic DB operation
+type BasicRdaServer struct {
+}
+
+// ExecuteNoneQuery usually used for data insert/update/delete operations
+// returns the effected row count.
+func (s *BasicRdaServer) ExecuteNoneQuery(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
+	log.Printf("RPC call [ExecuteNoneQuery] received From client [%s].", s.getClietIP(ctx))
 	return &rda.DBResponse{
 		Succeeded: false,
 		Message:   "ExecuteNoneQuery was not implemented yet",
 	}, nil
 }
 
-func (s *server) ExecuteScalar(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
-	log.Printf("RPC call [ExecuteScalar] received From client [%s].", getClietIP(ctx))
+// ExecuteScalar function perform DB operation and return the value of the first column in the first row
+func (s *BasicRdaServer) ExecuteScalar(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
+	start := time.Now()
+	log.Printf("RPC call [ExecuteScalar] received From client [%s].", s.getClietIP(ctx))
 
+	elapsed := time.Since(start)
+	log.Printf("Processed in %s", elapsed)
 	return &rda.DBResponse{
 		Succeeded: false,
 		Message:   "ExecuteScalar was not implemented yet",
 	}, nil
 }
 
-func (s *server) ExecuteDataSet(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
-	log.Printf("RPC call [ExecuteDataSet] received From client [%s].", getClietIP(ctx))
+// ExecuteDataSet function usually required for complex query operation, it can be used to retrieve multiple
+// result sets
+func (s *BasicRdaServer) ExecuteDataSet(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
+	start := time.Now()
+	log.Printf(">> RPC call [ExecuteDataSet] received From client [%s].", s.getClietIP(ctx))
 	response := &rda.DBResponse{
 		Succeeded: false,
 	}
 
-	if ds, err := executeDataSet(req); err != nil {
-		response.Message = err.Error()		
+	exec := NewRdaExecutor()
+
+	if ds, err := exec.ExecuteDataSet(req); err != nil {
+		response.Message = err.Error()
 	} else {
 		response.Succeeded = true
 		response.Dataset = ds
 	}
 
+	elapsed := time.Since(start)
+	log.Printf("<< Process completed in %s", elapsed)
 	return response, nil
 }
 
-func getClietIP(ctx context.Context) string {
+func (s *BasicRdaServer) getClietIP(ctx context.Context) string {
 	pr, ok := peer.FromContext(ctx)
 
 	if !ok {
@@ -70,25 +89,6 @@ func getClietIP(ctx context.Context) string {
 	addSlice := strings.Split(pr.Addr.String(), ":")
 
 	return addSlice[0]
-}
-
-func dumpRemoteDbRequest(req *rda.DBRequest) {
-	connStr, _ := buildConnectionString(req)
-
-	log.Printf("Dumping request : %s ...", connStr)
-	log.Printf("SQL:%s", req.SqlStatement)
-}
-
-func buildConnectionString(req *rda.DBRequest) (string, error) {
-	// Sample Connection string:
-	// sqlserver://dev:d3v@192.168.1.154:1433?database=godemo&connection+timeout=30
-	conn := fmt.Sprintf("sqlserver://%s:%s@%s:%v?database=%s&connection+timeout=30",
-		req.ServerInfo.UserId,
-		req.ServerInfo.Password,
-		req.ServerInfo.Server,
-		req.ServerInfo.Port,
-		req.ServerInfo.Database)
-	return conn, nil
 }
 
 func logAndFailOnError(prefix string, description string, err error) {
@@ -154,109 +154,3 @@ func executeScalar(req *rda.DBRequest) (*rda.DBResponse, error) {
 
 	return &response, nil
 }*/
-
-// Execute the remote Db request 
-func executeDataSet(req *rda.DBRequest) (*rda.DataSet, error) {
-
-	connectionString, _ := buildConnectionString(req)
-	conMgr := GetConnectionManager()
-	db, err := conMgr.GetConnection(connectionString)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt, err := db.Prepare(req.SqlStatement)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	dataSet := &rda.DataSet{
-		Tables: []*rda.DataTable{},
-	}
-
-	query, err := stmt.Query()
-	if err != nil {
-		return nil, err		
-	}
-
-	for {
-		table, err := createTable(query) 
-		for query.Next() {
-			// Since the query.Scan(dest ...interface{}) takes
-			// a slice of pointer, we need to create two slice
-			// one for actual values, and one for the pointer to
-			// each actual values. Just pass the pointer slice
-			// to scan method to make things work.			
-			values, valuePtrs := table.InitValueSlots()
-			err = query.Scan(valuePtrs...)
-			if err != nil {
-				log.Println("Scan failed:", err)
-				return nil, err
-			}
-
-			table.AddRow(values)
-		}
-
-		// Add Current table into this data set
-		dataSet.AddTable(table)
-
-		// If no more result set found in this query
-		// finish execution
-		if !query.NextResultSet() {
-			break
-		}
-	}
-	return dataSet, nil	
-}
- 
-func createTable(query *sql.Rows) (*rda.DataTable, error) {
-	columnTypes, _ := query.ColumnTypes()
-
-	table := &rda.DataTable{
-		Columns: make([]*rda.DataColumn, len(columnTypes)),
-		Rows:    make([]*rda.DataRow, 0, 10),
-	}
-
-	for i:=0;i<len(columnTypes);i++{ 
-		columnType := columnTypes[i]
-		
-		column := &rda.DataColumn{
-			Index : int32(i),
-			Name : columnType.Name(),
-			DbType: columnType.DatabaseTypeName(),		
-			Type: columnType.ScanType().String(),
-		}
-
-		if length, ok := columnType.Length(); ok{
-			column.Length = length
-		}
-
-		if precision, scale, ok := columnType.DecimalSize(); ok{
-			column.Precision = precision
-			column.Scale = scale
-		}
-
-		table.Columns[i] = column
-	}
- 
-	return table, nil
-}
-
-func main() {
-	log.Printf("Starting RPC server @ Port %v ...", port)
-	tcpPort, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	grpcSvr := grpc.NewServer()
-
-	// The server struct implemented the RemoteDBServiceServer interface
-	rda.RegisterRemoteDBServiceServer(grpcSvr, &server{})
-	// Register reflection service on gRPC server.
-	reflection.Register(grpcSvr)
-	if err := grpcSvr.Serve(tcpPort); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-		os.Exit(-1)
-	}
-}
