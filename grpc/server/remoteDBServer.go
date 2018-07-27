@@ -31,34 +31,47 @@ type BasicRdaServer struct {
 // ExecuteNoneQuery usually used for data insert/update/delete operations
 // returns the effected row count.
 func (s *BasicRdaServer) ExecuteNoneQuery(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
-	log.Printf("RPC call [ExecuteNoneQuery] received From client [%s].", s.getClietIP(ctx))
-	return &rda.DBResponse{
-		Succeeded: false,
-		Message:   "ExecuteNoneQuery was not implemented yet",
-	}, nil
+	start := time.Now()
+	response := &rda.DBResponse{Succeeded: false}
+
+	exec := NewRdaExecutor()
+
+	if rowEffected, err := exec.ExecuteNoneQuery(req); err != nil {
+		response.Message = err.Error()
+	} else {
+		response.Succeeded = true
+		response.RowEffected = rowEffected
+	}
+
+	elapsed := time.Since(start)
+	defer log.Printf("<<   RPC [ExecuteNoneQuery] completed in [ %s ] ClientIP: [%s]", elapsed, s.getClietIP(ctx))
+	return response, nil
 }
 
 // ExecuteScalar function perform DB operation and return the value of the first column in the first row
 func (s *BasicRdaServer) ExecuteScalar(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
 	start := time.Now()
-	log.Printf("RPC call [ExecuteScalar] received From client [%s].", s.getClietIP(ctx))
+	response := &rda.DBResponse{Succeeded: false}
+
+	exec := NewRdaExecutor()
+
+	if sv, err := exec.ExecuteSalar(req); err != nil {
+		response.Message = err.Error()
+	} else {
+		response.Succeeded = true
+		response.ScalarValue = sv
+	}
 
 	elapsed := time.Since(start)
-	log.Printf("Processed in %s", elapsed)
-	return &rda.DBResponse{
-		Succeeded: false,
-		Message:   "ExecuteScalar was not implemented yet",
-	}, nil
+	defer log.Printf("<<   RPC [ExecuteScalar] completed in [ %s ] ClientIP: [%s]", elapsed, s.getClietIP(ctx))
+	return response, nil
 }
 
 // ExecuteDataSet function usually required for complex query operation, it can be used to retrieve multiple
 // result sets
 func (s *BasicRdaServer) ExecuteDataSet(ctx context.Context, req *rda.DBRequest) (*rda.DBResponse, error) {
 	start := time.Now()
-	log.Printf(">> RPC call [ExecuteDataSet] received From client [%s].", s.getClietIP(ctx))
-	response := &rda.DBResponse{
-		Succeeded: false,
-	}
+	response := &rda.DBResponse{Succeeded: false}
 
 	exec := NewRdaExecutor()
 
@@ -70,7 +83,7 @@ func (s *BasicRdaServer) ExecuteDataSet(ctx context.Context, req *rda.DBRequest)
 	}
 
 	elapsed := time.Since(start)
-	log.Printf("<< Process completed in %s", elapsed)
+	defer log.Printf("<<   RPC [ExecuteDataSet] completed in [ %s ] ClientIP: [%s]", elapsed, s.getClietIP(ctx))
 	return response, nil
 }
 

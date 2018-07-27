@@ -1,15 +1,13 @@
 package main
 
 import (
-	"github.com/Kelindar/binary"
-	"log"
-	"time"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
-	"github.com/golang/protobuf/ptypes"
+	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/Kelindar/binary" 
 
 	rda "github.com/xiaoyumu/go-study/grpc/proto"
 	"golang.org/x/net/context"
@@ -33,8 +31,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	tryExecuteDataSet(ctx, c)
-
+	tryExecuteScalar(ctx, c)
+	//tryExecuteDataSet(ctx, c)
 }
 
 func getServerInfo() *rda.ServerInfo {
@@ -43,24 +41,23 @@ func getServerInfo() *rda.ServerInfo {
 		Port:     1433,
 		UserId:   "dev",
 		Password: "d3v",
-		Database: "godemo", 
+		Database: "godemo",
 	}
 }
 
 func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
 	log.Println("--------------------------------------------------------------")
-	sqlStatement := 
-	`SELECT GETDATE() AS DateTimeColumn, 
+	sqlStatement :=
+		`SELECT GETDATE() AS DateTimeColumn, 
 		CAST(255 AS TINYINT) AS TinyIntValueColumn, 
 		CAST(100 AS INT) AS IntValueColumn, 
 		CAST(200 AS BIGINT) AS BigIntValueColumn, 
 		CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
 		null AS ValueNull 
 	 SELECT 'Hahaha' AS TextColumn`
-					
+
 	log.Printf("Executing SQL: ")
 	log.Println(sqlStatement)
-
 
 	start := time.Now()
 	response, err := client.ExecuteDataSet(ctx, &rda.DBRequest{
@@ -68,7 +65,7 @@ func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
 		SqlStatement: sqlStatement,
 	})
 	elapsed := time.Since(start)
-    log.Printf("ExecuteDataSet took %s", elapsed)
+	log.Printf("ExecuteDataSet took %s", elapsed)
 	logFatal(err)
 
 	if response.Succeeded {
@@ -84,15 +81,15 @@ func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
 
 	for i, table := range tables {
 		log.Printf("(Table[%d]) %s :", i, table.GetName())
-		for c, col := range table.GetColumns(){
-			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tNullable: [%v]", 
-			c, 
-			col.GetName(),
-			col.GetDbType(),
-			col.GetPrecision(),
-			col.GetScale(),
-			col.GetLength(),
-			col.GetNullable())
+		for c, col := range table.GetColumns() {
+			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tNullable: [%v]",
+				c,
+				col.GetName(),
+				col.GetDbType(),
+				col.GetPrecision(),
+				col.GetScale(),
+				col.GetLength(),
+				col.GetNullable())
 		}
 
 		for j, row := range table.GetRows() {
@@ -108,10 +105,10 @@ func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
 }
 
 func decodeValue(column *rda.DataColumn, value []byte) interface{} {
-	if value == nil{
+	if value == nil {
 		return "[NULL]"
 	}
-	if len(column.Type) == 0{
+	if len(column.Type) == 0 {
 		return value
 	}
 
@@ -122,7 +119,7 @@ func decodeValue(column *rda.DataColumn, value []byte) interface{} {
 			log.Printf("Faile to Unmarshal value %v into []uint8 due to %s", value, err)
 			return value
 		}
-		if float64Value, err := toFloat64(decodedDecimalRaw); err != nil{
+		if float64Value, err := toFloat64(decodedDecimalRaw); err != nil {
 			log.Printf("Faile to convert value %v into float64 due to %s", value, err)
 			return value
 		} else {
@@ -150,18 +147,18 @@ func toFloat64(value []byte) (float64, error) {
 	return floatValue, nil
 }
 
-func getOriginalType(typeString string) (reflect.Type, error){
-	switch typeString{
-		case "time.Time":
-			return reflect.TypeOf((*time.Time)(nil)).Elem(), nil
-		case "float32":
-			return reflect.TypeOf((*float32)(nil)).Elem(), nil
-		case "int32":
-			return reflect.TypeOf((*int32)(nil)).Elem(), nil
-		case "int64":
-			return reflect.TypeOf((*int64)(nil)).Elem(), nil
-		case "string":
-			return reflect.TypeOf((*string)(nil)).Elem(), nil
+func getOriginalType(typeString string) (reflect.Type, error) {
+	switch typeString {
+	case "time.Time":
+		return reflect.TypeOf((*time.Time)(nil)).Elem(), nil
+	case "float32":
+		return reflect.TypeOf((*float32)(nil)).Elem(), nil
+	case "int32":
+		return reflect.TypeOf((*int32)(nil)).Elem(), nil
+	case "int64":
+		return reflect.TypeOf((*int64)(nil)).Elem(), nil
+	case "string":
+		return reflect.TypeOf((*string)(nil)).Elem(), nil
 	}
 
 	return nil, fmt.Errorf("unable to determine the type by [%s]", typeString)
@@ -194,23 +191,9 @@ func tryExecuteScalar(ctx context.Context, client rda.RemoteDBServiceClient) {
 		return
 	}
 
-	var dynamicValue ptypes.DynamicAny
+	value := decodeValue(response.ScalarValue.Type, response.ScalarValue.Value.Value)
 
-	// The second parameter of ptypes.UnmarshalAny() method should be an address
-	// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
-	// throw with message:
-	//    mismatched message type: got "google.protobuf.Timestamp" want ""
-
-	/*
-		if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
-			log.Println("Failed to unmarshal Any due to " + err.Error())
-			os.Exit(-1)
-		}*/
-
-	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
-		time, _ := ptypes.Timestamp(ts)
-		log.Println(time)
-	}
+	log.Printf("Scalar Value is [%v]", value)
 }
 
 func tryExecuteNoneQuery(ctx context.Context, client rda.RemoteDBServiceClient) {
@@ -226,21 +209,5 @@ func tryExecuteNoneQuery(ctx context.Context, client rda.RemoteDBServiceClient) 
 		log.Println("ScalerValue is nil in the response.")
 		return
 	}
-
-	var dynamicValue ptypes.DynamicAny
-
-	// The second parameter of ptypes.UnmarshalAny() method should be an address
-	// of ptypes.DynamicAny, so & must be provided. Otherwise, an error will be
-	// throw with message:
-	//    mismatched message type: got "google.protobuf.Timestamp" want ""
-	/*
-		if err := ptypes.UnmarshalAny(response.ScalarValue.Value, &dynamicValue); err != nil {
-			log.Println("Failed to unmarshal Any due to " + err.Error())
-			os.Exit(-1)
-		}*/
-
-	if ts, ok := dynamicValue.Message.(*timestamp.Timestamp); ok {
-		time, _ := ptypes.Timestamp(ts)
-		log.Println(time)
-	}
+ 
 }

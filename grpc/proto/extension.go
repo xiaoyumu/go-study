@@ -28,13 +28,14 @@ func (table *DataTable) AddRow(rowValues []interface{}) {
 	for idx, value := range rowValues {
 		 row.Values[idx] = &DBValue{
 			Index : int32(idx),
-			Value : serialize(value),
+			Value : Serialize(value),
 		}
 	}
 	table.Rows = append(table.Rows, row)
 }
 
-func serialize(value interface{}) []byte{
+// Serialize convert the value into a slice of bytes
+func Serialize(value interface{}) []byte{
 	if value == nil{
 		return nil
 	}
