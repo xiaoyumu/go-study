@@ -11,12 +11,16 @@ import (
 // Executor interface defines the DB operations
 type Executor interface {
 	ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, error)
-	ExecuteNoneQuery(req *proto.DBRequest) (int32, error)
+	ExecuteNoneQuery(req *proto.DBRequest) (int64, error)
 	ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error)
 }
 
 type RdaExecutor struct {
 	conMgr ConnectionManager
+}
+
+type ExecutorContext struct {
+	Request *proto.DBRequest
 }
 
 func NewRdaExecutor() Executor {
@@ -25,8 +29,43 @@ func NewRdaExecutor() Executor {
 	}
 }
 
-func (e *RdaExecutor) ExecuteNoneQuery(req *proto.DBRequest) (int32, error) {
-	return 0, fmt.Errorf("Not implemented yet")
+func (e *RdaExecutor) ExecuteNoneQuery(req *proto.DBRequest) (int64, error) {
+	connectionString, _ := e.conMgr.BuildConnectionString(req)
+	db, err := e.conMgr.GetConnection(connectionString)
+	if err != nil {
+		return 0, err
+	}
+
+	parameters, err := buildParameters(req.Parameters)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to build parameter list due to [ %s ]", err)
+	}
+
+	result, err := db.Exec(req.SqlStatement, parameters...)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.RowsAffected()
+}
+
+func removePrefix(parameter string) string {
+	return string(([]rune(parameter))[1:])
+}
+
+func buildParameters(parameters []*proto.DBParameter) ([]interface{}, error) {
+	if len(parameters) == 0 {
+		return nil, nil
+	}
+	parameterList := make([]interface{}, len(parameters))
+
+	for i := 0; i < len(parameters); i++ {
+		param := parameters[i]
+		paramValue := param.Value
+		parameterList[i] = sql.Named(removePrefix(param.Name), paramValue)
+	}
+
+	return parameterList, nil
 }
 
 func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error) {
@@ -41,7 +80,12 @@ func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, 
 	}
 	defer stmt.Close()
 
-	query, errQuery := stmt.Query()
+	parameters, err := buildParameters(req.Parameters)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to build parameter list due to [ %s ]", err)
+	}
+
+	query, errQuery := stmt.Query(parameters...)
 	if errQuery != nil {
 		return nil, errQuery
 	}
@@ -87,7 +131,12 @@ func (e *RdaExecutor) ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, erro
 		Tables: []*proto.DataTable{},
 	}
 
-	query, err := stmt.Query()
+	parameters, err := buildParameters(req.Parameters)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to build parameter list due to [ %s ]", err)
+	}
+
+	query, err := stmt.Query(parameters...)
 	if err != nil {
 		return nil, err
 	}

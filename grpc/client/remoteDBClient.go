@@ -8,7 +8,7 @@ import (
 
 	"github.com/Kelindar/binary"
 
-	rda "github.com/xiaoyumu/go-study/grpc/proto"
+	"github.com/xiaoyumu/go-study/grpc/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -25,17 +25,18 @@ func main() {
 		log.Fatalf("Failed to connect to remove server: %v", err)
 	}
 	defer conn.Close()
-	c := rda.NewRemoteDBServiceClient(conn)
+	c := proto.NewRemoteDBServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	tryExecuteScalar(ctx, c)
-	//tryExecuteDataSet(ctx, c)
+	tryExecuteNoneQuery(ctx, c)
+	// tryExecuteScalar(ctx, c)
+	// tryExecuteDataSet(ctx, c)
 }
 
-func getServerInfo() *rda.ServerInfo {
-	return &rda.ServerInfo{
+func getServerInfo() *proto.ServerInfo {
+	return &proto.ServerInfo{
 		Server:   "192.168.1.154",
 		Port:     1433,
 		UserId:   "dev",
@@ -44,66 +45,7 @@ func getServerInfo() *rda.ServerInfo {
 	}
 }
 
-func tryExecuteDataSet(ctx context.Context, client rda.RemoteDBServiceClient) {
-	log.Println("--------------------------------------------------------------")
-	sqlStatement :=
-		`SELECT GETDATE() AS DateTimeColumn, 
-		CAST(255 AS TINYINT) AS TinyIntValueColumn, 
-		CAST(100 AS INT) AS IntValueColumn, 
-		CAST(200 AS BIGINT) AS BigIntValueColumn, 
-		CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
-		null AS ValueNull 
-	 SELECT 'Hahaha' AS TextColumn`
-
-	log.Printf("Executing SQL: ")
-	log.Println(sqlStatement)
-
-	start := time.Now()
-	response, err := client.ExecuteDataSet(ctx, &rda.DBRequest{
-		ServerInfo:   getServerInfo(),
-		SqlStatement: sqlStatement,
-	})
-	elapsed := time.Since(start)
-	log.Printf("ExecuteDataSet took %s", elapsed)
-	logFatal(err)
-
-	if response.Succeeded {
-		log.Println("Remote call succeeded.")
-	} else {
-		log.Printf("Remote call failed due to %s.", response.Message)
-	}
-
-	ds := response.Dataset
-
-	tables := ds.GetTables()
-	log.Printf("Total %d tables in the returned data set.", len(tables))
-
-	for i, table := range tables {
-		log.Printf("(Table[%d]) %s :", i, table.GetName())
-		for c, col := range table.GetColumns() {
-			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tNullable: [%v]",
-				c,
-				col.GetName(),
-				col.GetDbType(),
-				col.GetPrecision(),
-				col.GetScale(),
-				col.GetLength(),
-				col.GetNullable())
-		}
-
-		for j, row := range table.GetRows() {
-			log.Printf("  (Row[%d]):", j)
-			for k, cell := range row.GetValues() {
-				column := table.Columns[k]
-				valueObject := cell.GetValue() // []byte
-				valueType := column.GetType()
-				log.Printf("    Cell[%d]: \tType: [%s] \tValue: [%v]", k, valueType, decodeValue(column, valueObject))
-			}
-		}
-	}
-}
-
-func decodeValue(column *rda.DataColumn, value []byte) interface{} {
+func decodeValue(column *proto.DataColumn, value []byte) interface{} {
 	if value == nil {
 		return "[NULL]"
 	}
@@ -174,15 +116,16 @@ func logFatal(err error) {
 	}
 }
 
-func dumpRemoteResponse(response *rda.DBResponse) {
+func dumpRemoteResponse(response *proto.DBResponse) {
 	log.Printf("Remote Result is : %v", response.Succeeded)
 	log.Printf("Remote Message is : %s", response.Message)
 	log.Printf("Remote ScalarValue is : %v", response.ScalarValue)
 	log.Printf("Remote Dataset is : %v", response.Dataset)
+	log.Printf("Remote RowEffected is : %v", response.RowEffected)
 }
 
-func tryExecuteScalar(ctx context.Context, client rda.RemoteDBServiceClient) {
-	response, err := client.ExecuteScalar(ctx, &rda.DBRequest{
+func tryExecuteScalar(ctx context.Context, client proto.RemoteDBServiceClient) {
+	response, err := client.ExecuteScalar(ctx, &proto.DBRequest{
 		ServerInfo:   getServerInfo(),
 		SqlStatement: "SELECT GETDATE(), 1",
 	})
@@ -200,18 +143,83 @@ func tryExecuteScalar(ctx context.Context, client rda.RemoteDBServiceClient) {
 	log.Printf("Scalar Value is [%v]", value)
 }
 
-func tryExecuteNoneQuery(ctx context.Context, client rda.RemoteDBServiceClient) {
-	response, err := client.ExecuteNoneQuery(ctx, &rda.DBRequest{
+func tryExecuteDataSet(ctx context.Context, client proto.RemoteDBServiceClient) {
+	log.Println("--------------------------------------------------------------")
+	sqlStatement :=
+		`SELECT GETDATE() AS DateTimeColumn, 
+		CAST(255 AS TINYINT) AS TinyIntValueColumn, 
+		CAST(100 AS INT) AS IntValueColumn, 
+		CAST(200 AS BIGINT) AS BigIntValueColumn, 
+		CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
+		null AS ValueNull 
+	 SELECT 'Hahaha' AS TextColumn`
+
+	log.Printf("Executing SQL: ")
+	log.Println(sqlStatement)
+
+	start := time.Now()
+	response, err := client.ExecuteDataSet(ctx, &proto.DBRequest{
 		ServerInfo:   getServerInfo(),
-		SqlStatement: "SELECT GETDATE(), 1",
+		SqlStatement: sqlStatement,
 	})
+	elapsed := time.Since(start)
+	log.Printf("ExecuteDataSet took %s", elapsed)
+	logFatal(err)
+
+	if response.Succeeded {
+		log.Println("Remote call succeeded.")
+	} else {
+		log.Printf("Remote call failed due to %s.", response.Message)
+	}
+
+	ds := response.Dataset
+
+	tables := ds.GetTables()
+	log.Printf("Total %d tables in the returned data set.", len(tables))
+
+	for i, table := range tables {
+		log.Printf("(Table[%d]) %s :", i, table.GetName())
+		for c, col := range table.GetColumns() {
+			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tNullable: [%v]",
+				c,
+				col.GetName(),
+				col.GetDbType(),
+				col.GetPrecision(),
+				col.GetScale(),
+				col.GetLength(),
+				col.GetNullable())
+		}
+
+		for j, row := range table.GetRows() {
+			log.Printf("  (Row[%d]):", j)
+			for k, cell := range row.GetValues() {
+				column := table.Columns[k]
+				valueObject := cell.GetValue() // []byte
+				valueType := column.GetType()
+				log.Printf("    Cell[%d]: \tType: [%s] \tValue: [%v]", k, valueType, decodeValue(column, valueObject))
+			}
+		}
+	}
+}
+
+func tryExecuteNoneQuery(ctx context.Context, client proto.RemoteDBServiceClient) {
+	request := &proto.DBRequest{
+		ServerInfo: getServerInfo(),
+		SqlStatement: `INSERT INTO dbo.Product(Name, Description, Price, CreatedTime, Quantity,UpdatedTime, Active)	
+					  VALUES(@Name, @Description, @Price, @CreatedTime, @Quantity, @UpdatedTime, @Active)`,
+		Parameters: make([]*proto.DBParameter, 7),
+	}
+
+	request.Parameters[0] = &proto.DBParameter{Name: "@Name", Value: "Test Name"}
+	request.Parameters[1] = &proto.DBParameter{Name: "@Description", Value: "Test Description"}
+	request.Parameters[2] = &proto.DBParameter{Name: "@Price", Value: "1258.99"}
+	request.Parameters[3] = &proto.DBParameter{Name: "@CreatedTime", Value: time.Now().String()}
+	request.Parameters[4] = &proto.DBParameter{Name: "@Quantity", Value: "12"}
+	request.Parameters[5] = &proto.DBParameter{Name: "@UpdatedTime", Value: time.Now().String()}
+	request.Parameters[6] = &proto.DBParameter{Name: "@Active", Value: "true"}
+
+	response, err := client.ExecuteNoneQuery(ctx, request)
 	logFatal(err)
 
 	dumpRemoteResponse(response)
-
-	if response.ScalarValue == nil {
-		log.Println("ScalerValue is nil in the response.")
-		return
-	}
-
 }

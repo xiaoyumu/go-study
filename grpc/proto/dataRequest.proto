@@ -62,7 +62,7 @@ message DBResponse {
     DBScalarValue scalarValue = 3;
 
     // For execute none query operation
-    int32 rowEffected = 4;
+    int64 rowEffected = 4;
 
     // For execute execute dataset operation
     DataSet dataset = 5;
