@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 
-	rda "github.com/xiaoyumu/go-study/grpc/proto"
+	"github.com/xiaoyumu/go-study/grpc/proto"
 )
 
 // Executor interface defines the DB operations
 type Executor interface {
-	ExecuteDataSet(req *rda.DBRequest) (*rda.DataSet, error)
-	ExecuteNoneQuery(req *rda.DBRequest) (int32, error)
-	ExecuteSalar(req *rda.DBRequest) (*rda.DBScalarValue, error)
+	ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, error)
+	ExecuteNoneQuery(req *proto.DBRequest) (int32, error)
+	ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error)
 }
 
 type RdaExecutor struct {
@@ -25,11 +25,11 @@ func NewRdaExecutor() Executor {
 	}
 }
 
-func (e *RdaExecutor) ExecuteNoneQuery(req *rda.DBRequest) (int32, error) {
+func (e *RdaExecutor) ExecuteNoneQuery(req *proto.DBRequest) (int32, error) {
 	return 0, fmt.Errorf("Not implemented yet")
 }
 
-func (e *RdaExecutor) ExecuteSalar(req *rda.DBRequest) (*rda.DBScalarValue, error) {
+func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error) {
 	connectionString, _ := e.conMgr.BuildConnectionString(req)
 	db, err := e.conMgr.GetConnection(connectionString)
 	if err != nil {
@@ -45,32 +45,32 @@ func (e *RdaExecutor) ExecuteSalar(req *rda.DBRequest) (*rda.DBScalarValue, erro
 	if errQuery != nil {
 		return nil, errQuery
 	}
-	// Remote Message is : sql: expected 2 destination arguments in Scan, not 1
+
 	columnTypes, errGetColumnTypes := query.ColumnTypes()
 	if errGetColumnTypes != nil {
 		return nil, errGetColumnTypes
-	} 
-	sv := &rda.DBScalarValue{
-		Type: toDataColumn(columnTypes[0], 0), // Just pickup the first column
-		Value: &rda.DBValue{Index : 0},
 	}
- 
+	sv := &proto.DBScalarValue{
+		Type:  toDataColumn(columnTypes[0], 0), // Just pickup the first column
+		Value: &proto.DBValue{Index: 0},
+	}
+
 	if !query.Next() {
 		return nil, fmt.Errorf("no Data")
 	}
 
-	value := *new(interface{})
-	errScan := query.Scan(&value)
+	values, valuePtrs := proto.CreateValueSlotForScan(len(columnTypes))
+	errScan := query.Scan(valuePtrs...)
 	if errScan != nil {
 		return nil, errScan
 	}
 
-	sv.Value.Value = rda.Serialize(value)
+	sv.Value.Value = proto.Serialize(values[0])
 
 	return sv, nil
 }
 
-func (e *RdaExecutor) ExecuteDataSet(req *rda.DBRequest) (*rda.DataSet, error) {
+func (e *RdaExecutor) ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, error) {
 	connectionString, _ := e.conMgr.BuildConnectionString(req)
 	db, err := e.conMgr.GetConnection(connectionString)
 	if err != nil {
@@ -83,8 +83,8 @@ func (e *RdaExecutor) ExecuteDataSet(req *rda.DBRequest) (*rda.DataSet, error) {
 	}
 	defer stmt.Close()
 
-	dataSet := &rda.DataSet{
-		Tables: []*rda.DataTable{},
+	dataSet := &proto.DataSet{
+		Tables: []*proto.DataTable{},
 	}
 
 	query, err := stmt.Query()
@@ -122,8 +122,8 @@ func (e *RdaExecutor) ExecuteDataSet(req *rda.DBRequest) (*rda.DataSet, error) {
 	return dataSet, nil
 }
 
-func toDataColumn(columnType *sql.ColumnType, index int) *rda.DataColumn {
-	column := &rda.DataColumn{
+func toDataColumn(columnType *sql.ColumnType, index int) *proto.DataColumn {
+	column := &proto.DataColumn{
 		Index:  int32(index),
 		Name:   columnType.Name(),
 		DbType: columnType.DatabaseTypeName(),
@@ -141,16 +141,16 @@ func toDataColumn(columnType *sql.ColumnType, index int) *rda.DataColumn {
 	return column
 }
 
-func createTable(query *sql.Rows) (*rda.DataTable, error) {
+func createTable(query *sql.Rows) (*proto.DataTable, error) {
 	columnTypes, _ := query.ColumnTypes()
 
-	table := &rda.DataTable{
-		Columns: make([]*rda.DataColumn, len(columnTypes)),
-		Rows:    make([]*rda.DataRow, 0, 10),
+	table := &proto.DataTable{
+		Columns: make([]*proto.DataColumn, len(columnTypes)),
+		Rows:    make([]*proto.DataRow, 0, 10),
 	}
 
 	for i := 0; i < len(columnTypes); i++ {
-		columnType := columnTypes[i] 
+		columnType := columnTypes[i]
 		table.Columns[i] = toDataColumn(columnType, i)
 	}
 

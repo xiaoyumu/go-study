@@ -2,6 +2,7 @@ package proto
 
 import (
 	"fmt"
+
 	"github.com/Kelindar/binary"
 )
 
@@ -26,31 +27,35 @@ func (table *DataTable) AddRow(rowValues []interface{}) {
 		Values: make([]*DBValue, len(rowValues)),
 	}
 	for idx, value := range rowValues {
-		 row.Values[idx] = &DBValue{
-			Index : int32(idx),
-			Value : Serialize(value),
+		row.Values[idx] = &DBValue{
+			Index: int32(idx),
+			Value: Serialize(value),
 		}
 	}
 	table.Rows = append(table.Rows, row)
 }
 
 // Serialize convert the value into a slice of bytes
-func Serialize(value interface{}) []byte{
-	if value == nil{
+func Serialize(value interface{}) []byte {
+	if value == nil {
 		return nil
 	}
 	bytes, err := binary.Marshal(value)
-	if err!=nil{
+	if err != nil {
 		return nil
 	}
 	return bytes
 }
 
-// InitValueSlots function initialize a value slice for sql scanning
-func (table *DataTable) InitValueSlots() ([]interface{},[]interface{}) {
-	columnCount := len(table.Columns)
+// InitValueSlots function initialize a pair of value slices for sql scanning
+func (table *DataTable) InitValueSlots() ([]interface{}, []interface{}) {
+	return CreateValueSlotForScan(len(table.Columns))
+}
+
+// CreateValueSlotForScan function create and initialize a pair of value slices for sql row scanning
+func CreateValueSlotForScan(columnCount int) ([]interface{}, []interface{}) {
 	values := make([]interface{}, columnCount)
-	valuePtrs := make([]interface{},columnCount)
+	valuePtrs := make([]interface{}, columnCount)
 	// Store the address of each value in values slice into
 	// corresponding element of valuePtrs slice
 	for i := 0; i < columnCount; i++ {

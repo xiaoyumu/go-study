@@ -3,11 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"strconv"
 	"time"
 
-	"github.com/Kelindar/binary" 
+	"github.com/Kelindar/binary"
 
 	rda "github.com/xiaoyumu/go-study/grpc/proto"
 	"golang.org/x/net/context"
@@ -127,16 +126,15 @@ func decodeValue(column *rda.DataColumn, value []byte) interface{} {
 		}
 	}
 
-	originalType, err := getOriginalType(column.Type)
+	originalType, err := getTypedObjectPtr(column.Type)
 	if err != nil {
 		return value
 	}
-	decodedValue := reflect.New(originalType)
-	errDecode := binary.Unmarshal(value, decodedValue.Interface())
+	errDecode := binary.Unmarshal(value, originalType)
 	if errDecode != nil {
 		return value
 	}
-	return decodedValue.Elem()
+	return originalType
 }
 
 func toFloat64(value []byte) (float64, error) {
@@ -147,18 +145,24 @@ func toFloat64(value []byte) (float64, error) {
 	return floatValue, nil
 }
 
-func getOriginalType(typeString string) (reflect.Type, error) {
+func getTypedObjectPtr(typeString string) (interface{}, error) {
 	switch typeString {
 	case "time.Time":
-		return reflect.TypeOf((*time.Time)(nil)).Elem(), nil
+		return &time.Time{}, nil
 	case "float32":
-		return reflect.TypeOf((*float32)(nil)).Elem(), nil
+		return Float32(), nil
+	case "float64":
+		return Float64(), nil
+	case "int16":
+		return Int16(), nil
 	case "int32":
-		return reflect.TypeOf((*int32)(nil)).Elem(), nil
+		return Int32(), nil
 	case "int64":
-		return reflect.TypeOf((*int64)(nil)).Elem(), nil
+		return Int64(), nil
 	case "string":
-		return reflect.TypeOf((*string)(nil)).Elem(), nil
+		return String(), nil
+	case "bool":
+		return Bool(), nil
 	}
 
 	return nil, fmt.Errorf("unable to determine the type by [%s]", typeString)
@@ -209,5 +213,5 @@ func tryExecuteNoneQuery(ctx context.Context, client rda.RemoteDBServiceClient) 
 		log.Println("ScalerValue is nil in the response.")
 		return
 	}
- 
+
 }
