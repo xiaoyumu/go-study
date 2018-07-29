@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"strconv"
+	"sync"
 	"time"
-
-	"github.com/Kelindar/binary"
 
 	"github.com/xiaoyumu/go-study/grpc/proto"
 	"golang.org/x/net/context"
@@ -17,9 +14,11 @@ const (
 	address = "localhost:50051"
 )
 
+var group sync.WaitGroup
+
 func main() {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(3600*time.Second))
 
 	if err != nil {
 		log.Fatalf("Failed to connect to remove server: %v", err)
@@ -27,12 +26,45 @@ func main() {
 	defer conn.Close()
 	c := proto.NewRemoteDBServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Second)
 	defer cancel()
 
+	sqlStatementForScalar := "SELECT 123.99, SYSDATETIMEOFFSET()"
+
+	sqlStatementDataSet :=
+		`SELECT GETDATE() AS DateTimeColumn, 
+		SYSDATETIMEOFFSET() AS DateTimeOffsetColumn, 
+		CAST(255 AS TINYINT) AS TinyIntValueColumn, 
+		CAST(100 AS INT) AS IntValueColumn, 
+		CAST(200 AS BIGINT) AS BigIntValueColumn, 
+		CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
+		CAST(9.99999999 AS Decimal(18,8)) AS Decimal2Column,
+		CAST(1 AS BIT) AS BooleanColumn,
+		CAST(N'<Test/>' AS XML) AS XmlColumn,
+		null AS ValueNull 
+	 SELECT 'Hahaha' AS TextColumn`
+
+	group.Add(2)
+
 	tryExecuteNoneQuery(ctx, c)
-	// tryExecuteScalar(ctx, c)
-	// tryExecuteDataSet(ctx, c)
+	go func() {
+		for x := 0; x < 100; x++ {
+			tryExecuteScalar(ctx, c, sqlStatementForScalar)
+			time.Sleep(300 * time.Millisecond)
+		}
+		group.Done()
+	}()
+
+	go func() {
+		for x := 0; x < 100; x++ {
+			tryExecuteDataSet(ctx, c, sqlStatementDataSet)
+			time.Sleep(330 * time.Millisecond)
+		}
+		group.Done()
+	}()
+
+	group.Wait()
+	log.Println("Done")
 }
 
 func getServerInfo() *proto.ServerInfo {
@@ -43,71 +75,6 @@ func getServerInfo() *proto.ServerInfo {
 		Password: "d3v",
 		Database: "godemo",
 	}
-}
-
-func decodeValue(column *proto.DataColumn, value []byte) interface{} {
-	if value == nil {
-		return "[NULL]"
-	}
-	if len(column.Type) == 0 {
-		return value
-	}
-
-	if column.GetDbType() == "DECIMAL" {
-		decodedDecimalRaw := make([]uint8, 8)
-		err := binary.Unmarshal(value, &decodedDecimalRaw)
-		if err != nil {
-			log.Printf("Faile to Unmarshal value %v into []uint8 due to %s", value, err)
-			return value
-		}
-		if float64Value, err := toFloat64(decodedDecimalRaw); err != nil {
-			log.Printf("Faile to convert value %v into float64 due to %s", value, err)
-			return value
-		} else {
-			return float64Value
-		}
-	}
-
-	originalType, err := getTypedObjectPtr(column.Type)
-	if err != nil {
-		return value
-	}
-	errDecode := binary.Unmarshal(value, originalType)
-	if errDecode != nil {
-		return value
-	}
-	return originalType
-}
-
-func toFloat64(value []byte) (float64, error) {
-	floatValue, err := strconv.ParseFloat(string(value), 64)
-	if err != nil {
-		return 0, err
-	}
-	return floatValue, nil
-}
-
-func getTypedObjectPtr(typeString string) (interface{}, error) {
-	switch typeString {
-	case "time.Time":
-		return &time.Time{}, nil
-	case "float32":
-		return Float32(), nil
-	case "float64":
-		return Float64(), nil
-	case "int16":
-		return Int16(), nil
-	case "int32":
-		return Int32(), nil
-	case "int64":
-		return Int64(), nil
-	case "string":
-		return String(), nil
-	case "bool":
-		return Bool(), nil
-	}
-
-	return nil, fmt.Errorf("unable to determine the type by [%s]", typeString)
 }
 
 func logFatal(err error) {
@@ -124,10 +91,10 @@ func dumpRemoteResponse(response *proto.DBResponse) {
 	log.Printf("Remote RowEffected is : %v", response.RowEffected)
 }
 
-func tryExecuteScalar(ctx context.Context, client proto.RemoteDBServiceClient) {
+func tryExecuteScalar(ctx context.Context, client proto.RemoteDBServiceClient, sqlStatement string) {
 	response, err := client.ExecuteScalar(ctx, &proto.DBRequest{
 		ServerInfo:   getServerInfo(),
-		SqlStatement: "SELECT GETDATE(), 1",
+		SqlStatement: sqlStatement,
 	})
 	logFatal(err)
 
@@ -138,21 +105,16 @@ func tryExecuteScalar(ctx context.Context, client proto.RemoteDBServiceClient) {
 		return
 	}
 
-	value := decodeValue(response.ScalarValue.Type, response.ScalarValue.Value.Value)
+	value := proto.DecodeValue(
+		response.ScalarValue.DbType,
+		response.ScalarValue.Type,
+		response.ScalarValue.Value)
 
 	log.Printf("Scalar Value is [%v]", value)
 }
 
-func tryExecuteDataSet(ctx context.Context, client proto.RemoteDBServiceClient) {
+func tryExecuteDataSet(ctx context.Context, client proto.RemoteDBServiceClient, sqlStatement string) {
 	log.Println("--------------------------------------------------------------")
-	sqlStatement :=
-		`SELECT GETDATE() AS DateTimeColumn, 
-		CAST(255 AS TINYINT) AS TinyIntValueColumn, 
-		CAST(100 AS INT) AS IntValueColumn, 
-		CAST(200 AS BIGINT) AS BigIntValueColumn, 
-		CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
-		null AS ValueNull 
-	 SELECT 'Hahaha' AS TextColumn`
 
 	log.Printf("Executing SQL: ")
 	log.Println(sqlStatement)
@@ -180,13 +142,14 @@ func tryExecuteDataSet(ctx context.Context, client proto.RemoteDBServiceClient) 
 	for i, table := range tables {
 		log.Printf("(Table[%d]) %s :", i, table.GetName())
 		for c, col := range table.GetColumns() {
-			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tNullable: [%v]",
+			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tType:[%s] \tNullable: [%v]",
 				c,
 				col.GetName(),
 				col.GetDbType(),
 				col.GetPrecision(),
 				col.GetScale(),
 				col.GetLength(),
+				col.GetType(),
 				col.GetNullable())
 		}
 
@@ -194,9 +157,15 @@ func tryExecuteDataSet(ctx context.Context, client proto.RemoteDBServiceClient) 
 			log.Printf("  (Row[%d]):", j)
 			for k, cell := range row.GetValues() {
 				column := table.Columns[k]
-				valueObject := cell.GetValue() // []byte
+				rawValue := cell.GetValue() // []byte
 				valueType := column.GetType()
-				log.Printf("    Cell[%d]: \tType: [%s] \tValue: [%v]", k, valueType, decodeValue(column, valueObject))
+				decodedValue := table.Decode(cell)
+				log.Printf("    Cell[%d]:\tDBType: [%s] \tType: [%s] \tDecoded Value: [%v] RawValue:%v",
+					k,
+					column.DbType,
+					valueType,
+					decodedValue,
+					rawValue)
 			}
 		}
 	}
@@ -210,13 +179,13 @@ func tryExecuteNoneQuery(ctx context.Context, client proto.RemoteDBServiceClient
 		Parameters: make([]*proto.DBParameter, 7),
 	}
 
-	request.Parameters[0] = &proto.DBParameter{Name: "@Name", Value: "Test Name"}
-	request.Parameters[1] = &proto.DBParameter{Name: "@Description", Value: "Test Description"}
-	request.Parameters[2] = &proto.DBParameter{Name: "@Price", Value: "1258.99"}
-	request.Parameters[3] = &proto.DBParameter{Name: "@CreatedTime", Value: time.Now().String()}
-	request.Parameters[4] = &proto.DBParameter{Name: "@Quantity", Value: "12"}
-	request.Parameters[5] = &proto.DBParameter{Name: "@UpdatedTime", Value: time.Now().String()}
-	request.Parameters[6] = &proto.DBParameter{Name: "@Active", Value: "true"}
+	request.Parameters[0] = (&proto.DBParameter{Name: "@Name"}).SetDBType("VARCHAR").SetLength(50).SetValue("Test Name")
+	request.Parameters[1] = (&proto.DBParameter{Name: "@Description"}).SetDBType("NVARCHAR").SetLength(500).SetValue("Test Description")
+	request.Parameters[2] = (&proto.DBParameter{Name: "@Price"}).SetDBType("DECIMAL").SetValue(1258.99)
+	request.Parameters[3] = (&proto.DBParameter{Name: "@CreatedTime"}).SetDBType("DATETIME").SetValue(time.Now())
+	request.Parameters[4] = (&proto.DBParameter{Name: "@Quantity"}).SetDBType("INT").SetValue(12)
+	request.Parameters[5] = (&proto.DBParameter{Name: "@UpdatedTime"}).SetDBType("DATETIME").SetValue(time.Now())
+	request.Parameters[6] = (&proto.DBParameter{Name: "@Active"}).SetDBType("BIT").SetValue(true)
 
 	response, err := client.ExecuteNoneQuery(ctx, request)
 	logFatal(err)

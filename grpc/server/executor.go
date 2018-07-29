@@ -61,7 +61,9 @@ func buildParameters(parameters []*proto.DBParameter) ([]interface{}, error) {
 
 	for i := 0; i < len(parameters); i++ {
 		param := parameters[i]
-		paramValue := param.Value
+		// DBParameter.Value was serialized to bytes, it should be
+		// deserialized back to actual data value (interface{})
+		paramValue := param.DeserializeValue()
 		parameterList[i] = sql.Named(removePrefix(param.Name), paramValue)
 	}
 
@@ -94,9 +96,22 @@ func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, 
 	if errGetColumnTypes != nil {
 		return nil, errGetColumnTypes
 	}
+
+	columnType := columnTypes[0] // Just pick the first column type
+
+	scanType := columnType.ScanType()
 	sv := &proto.DBScalarValue{
-		Type:  toDataColumn(columnTypes[0], 0), // Just pickup the first column
-		Value: &proto.DBValue{Index: 0},
+		DbType: columnType.DatabaseTypeName(),
+		Type:   scanType.String(),
+	}
+
+	if length, ok := columnType.Length(); ok {
+		sv.Length = length
+	}
+
+	if precision, scale, ok := columnType.DecimalSize(); ok {
+		sv.Precision = precision
+		sv.Scale = scale
 	}
 
 	if !query.Next() {
@@ -108,8 +123,7 @@ func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, 
 	if errScan != nil {
 		return nil, errScan
 	}
-
-	sv.Value.Value = proto.Serialize(values[0])
+	sv.Value = proto.Serialize(values[0])
 
 	return sv, nil
 }

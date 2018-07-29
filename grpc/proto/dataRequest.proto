@@ -43,7 +43,9 @@ message DBParameter{
     string name = 1;
     string dbType = 2;
     int64 dbLength = 3;
-    string value = 4;
+    // golang type
+    string type = 4;
+    bytes value = 5;
 }
 
 message ServerInfo {
@@ -117,6 +119,19 @@ message DBValue{
 }
 
 message DBScalarValue{
-    DataColumn type = 1;
-    DBValue value = 2;
+    // The value
+    bytes value = 1;
+
+    // The db type of the column    
+    string dbType = 2;
+
+    // The db size
+    int64 length = 3;
+
+    // golang type
+    string type = 4;
+  
+    // For decimal numeric type
+    int64 precision = 5;
+    int64 scale = 6;    
 }
