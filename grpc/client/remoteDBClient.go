@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -29,7 +30,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Second)
 	defer cancel()
 
-	sqlStatementForScalar := "SELECT 123.99, SYSDATETIMEOFFSET()"
+	//sqlStatementForScalar := "SELECT 123.99, SYSDATETIMEOFFSET()"
 
 	sqlStatementDataSet :=
 		`SELECT GETDATE() AS DateTimeColumn, 
@@ -41,29 +42,35 @@ func main() {
 		CAST(9.99999999 AS Decimal(18,8)) AS Decimal2Column,
 		CAST(1 AS BIT) AS BooleanColumn,
 		CAST(N'<Test/>' AS XML) AS XmlColumn,
+		CAST('x' AS CHAR) AS SingleChar,		
+		CAST(N'这是一个中文字符串' AS NVARCHAR(20)) AS UnicodeString,
+		NEWID() AS UUID,
 		null AS ValueNull 
 	 SELECT 'Hahaha' AS TextColumn`
 
-	group.Add(2)
+	//group.Add(2)
 
-	tryExecuteNoneQuery(ctx, c)
-	go func() {
-		for x := 0; x < 100; x++ {
-			tryExecuteScalar(ctx, c, sqlStatementForScalar)
-			time.Sleep(300 * time.Millisecond)
-		}
-		group.Done()
-	}()
+	//tryExecuteNoneQuery(ctx, c)
+	tryExecuteDataSet(ctx, c, sqlStatementDataSet)
+	/*
+		go func() {
+			for x := 0; x < 100; x++ {
+				tryExecuteScalar(ctx, c, sqlStatementForScalar)
+				time.Sleep(300 * time.Millisecond)
+			}
+			group.Done()
+		}()
 
-	go func() {
-		for x := 0; x < 100; x++ {
-			tryExecuteDataSet(ctx, c, sqlStatementDataSet)
-			time.Sleep(330 * time.Millisecond)
-		}
-		group.Done()
-	}()
+		go func() {
+			for x := 0; x < 100; x++ {
+				tryExecuteDataSet(ctx, c, sqlStatementDataSet)
+				time.Sleep(330 * time.Millisecond)
+			}
+			group.Done()
+		}()
+	*/
 
-	group.Wait()
+	//group.Wait()
 	log.Println("Done")
 }
 
@@ -133,21 +140,34 @@ func tryExecuteDataSet(ctx context.Context, client proto.RemoteDBServiceClient, 
 	} else {
 		log.Printf("Remote call failed due to %s.", response.Message)
 	}
+	dumpDataSet(response.Dataset)
+}
 
-	ds := response.Dataset
-
+func dumpDataSet(ds *proto.DataSet) {
 	tables := ds.GetTables()
 	log.Printf("Total %d tables in the returned data set.", len(tables))
 
 	for i, table := range tables {
 		log.Printf("(Table[%d]) %s :", i, table.GetName())
-		for c, col := range table.GetColumns() {
-			log.Printf("  Column[%d] \tName: [%s] \tDBType: [%s](%d,%d) \tLTH: [%d] \tType:[%s] \tNullable: [%v]",
+		log.Printf("  %6s  %-21s %-16s %-10s %-11s %-11s %s",
+			"Column",
+			"Name",
+			"DBType",
+			"Precision",
+			"Length",
+			"Type",
+			"Nullable")
+
+		for c, col := range table.Columns {
+			precision := ""
+			if col.GetDbType() == "DECIMAL" {
+				precision = fmt.Sprintf("(%d,%d)", col.GetPrecision(), col.GetScale())
+			}
+			log.Printf("  %6d  %-21s %-16s %-10s %-11d %-11s %v",
 				c,
 				col.GetName(),
 				col.GetDbType(),
-				col.GetPrecision(),
-				col.GetScale(),
+				precision,
 				col.GetLength(),
 				col.GetType(),
 				col.GetNullable())

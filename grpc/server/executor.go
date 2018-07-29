@@ -15,7 +15,7 @@ type Executor interface {
 	ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error)
 }
 
-type RdaExecutor struct {
+type DataExecutor struct {
 	conMgr ConnectionManager
 }
 
@@ -24,19 +24,19 @@ type ExecutorContext struct {
 }
 
 func NewRdaExecutor() Executor {
-	return &RdaExecutor{
+	return &DataExecutor{
 		conMgr: GetConnectionManager(),
 	}
 }
 
-func (e *RdaExecutor) ExecuteNoneQuery(req *proto.DBRequest) (int64, error) {
+func (e *DataExecutor) ExecuteNoneQuery(req *proto.DBRequest) (int64, error) {
 	connectionString, _ := e.conMgr.BuildConnectionString(req)
 	db, err := e.conMgr.GetConnection(connectionString)
 	if err != nil {
 		return 0, err
 	}
 
-	parameters, err := buildParameters(req.Parameters)
+	parameters, err := buildSQLParameters(req.Parameters)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to build parameter list due to [ %s ]", err)
 	}
@@ -49,11 +49,7 @@ func (e *RdaExecutor) ExecuteNoneQuery(req *proto.DBRequest) (int64, error) {
 	return result.RowsAffected()
 }
 
-func removePrefix(parameter string) string {
-	return string(([]rune(parameter))[1:])
-}
-
-func buildParameters(parameters []*proto.DBParameter) ([]interface{}, error) {
+func buildSQLParameters(parameters []*proto.DBParameter) ([]interface{}, error) {
 	if len(parameters) == 0 {
 		return nil, nil
 	}
@@ -64,13 +60,13 @@ func buildParameters(parameters []*proto.DBParameter) ([]interface{}, error) {
 		// DBParameter.Value was serialized to bytes, it should be
 		// deserialized back to actual data value (interface{})
 		paramValue := param.DeserializeValue()
-		parameterList[i] = sql.Named(removePrefix(param.Name), paramValue)
+		parameterList[i] = sql.Named(param.NameWithoutPrefix(), paramValue)
 	}
 
 	return parameterList, nil
 }
 
-func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error) {
+func (e *DataExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, error) {
 	connectionString, _ := e.conMgr.BuildConnectionString(req)
 	db, err := e.conMgr.GetConnection(connectionString)
 	if err != nil {
@@ -82,7 +78,7 @@ func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, 
 	}
 	defer stmt.Close()
 
-	parameters, err := buildParameters(req.Parameters)
+	parameters, err := buildSQLParameters(req.Parameters)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to build parameter list due to [ %s ]", err)
 	}
@@ -128,7 +124,7 @@ func (e *RdaExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue, 
 	return sv, nil
 }
 
-func (e *RdaExecutor) ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, error) {
+func (e *DataExecutor) ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, error) {
 	connectionString, _ := e.conMgr.BuildConnectionString(req)
 	db, err := e.conMgr.GetConnection(connectionString)
 	if err != nil {
@@ -145,7 +141,7 @@ func (e *RdaExecutor) ExecuteDataSet(req *proto.DBRequest) (*proto.DataSet, erro
 		Tables: []*proto.DataTable{},
 	}
 
-	parameters, err := buildParameters(req.Parameters)
+	parameters, err := buildSQLParameters(req.Parameters)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to build parameter list due to [ %s ]", err)
 	}
