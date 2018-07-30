@@ -1,15 +1,24 @@
 package proto
 
+import (
+	"log"
+)
+
 // AddRow function builds a DataRow which contains all the value in the parameter rowValues
 func (table *DataTable) AddRow(rowValues []interface{}) {
 	row := &DataRow{
 		Values: make([]*DBValue, len(rowValues)),
 	}
 	for idx, value := range rowValues {
-		//column := table.Columns[idx]
+		column := table.Columns[idx]
+		decodedValue, newType, decodeErr := DecodeDBValueIfNeccessary(column.DbType, column.Type, value)
+		if decodeErr != nil {
+			log.Fatal(decodeErr)
+		}
+		column.Type = newType
 		row.Values[idx] = &DBValue{
 			Index: int32(idx),
-			Value: Serialize(value),
+			Value: Serialize(decodedValue),
 		}
 	}
 	table.Rows = append(table.Rows, row)

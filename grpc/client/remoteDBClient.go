@@ -30,48 +30,30 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Second)
 	defer cancel()
 
-	//sqlStatementForScalar := "SELECT 123.99, SYSDATETIMEOFFSET()"
+	sqlStatementForScalar := "SELECT NEWID() AS ID"
 
-	sqlStatementDataSet :=
-		`SELECT GETDATE() AS DateTimeColumn, 
-		SYSDATETIMEOFFSET() AS DateTimeOffsetColumn, 
-		CAST(255 AS TINYINT) AS TinyIntValueColumn, 
-		CAST(100 AS INT) AS IntValueColumn, 
-		CAST(200 AS BIGINT) AS BigIntValueColumn, 
-		CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
-		CAST(9.99999999 AS Decimal(18,8)) AS Decimal2Column,
-		CAST(1 AS BIT) AS BooleanColumn,
-		CAST(N'<Test/>' AS XML) AS XmlColumn,
-		CAST('x' AS CHAR) AS SingleChar,		
-		CAST(N'这是一个中文字符串' AS NVARCHAR(20)) AS UnicodeString,
-		NEWID() AS UUID,
-		CAST(NEWID() AS CHAR(36)) AS UUID2,
-		null AS ValueNull 
-	 SELECT 'Hahaha' AS TextColumn`
-
-	//group.Add(2)
-
-	//tryExecuteNoneQuery(ctx, c)
-	tryExecuteDataSet(ctx, c, sqlStatementDataSet)
 	/*
-		go func() {
-			for x := 0; x < 100; x++ {
-				tryExecuteScalar(ctx, c, sqlStatementForScalar)
-				time.Sleep(300 * time.Millisecond)
-			}
-			group.Done()
-		}()
-
-		go func() {
-			for x := 0; x < 100; x++ {
-				tryExecuteDataSet(ctx, c, sqlStatementDataSet)
-				time.Sleep(330 * time.Millisecond)
-			}
-			group.Done()
-		}()
+		sqlStatementDataSet :=
+			`SELECT GETDATE() AS DateTimeColumn,
+			SYSDATETIMEOFFSET() AS DateTimeOffsetColumn,
+			CAST(255 AS TINYINT) AS TinyIntValueColumn,
+			CAST(100 AS INT) AS IntValueColumn,
+			CAST(200 AS BIGINT) AS BigIntValueColumn,
+			CAST(10.99 AS Decimal(18,4)) AS DecimalColumn,
+			CAST(9.99999999 AS Decimal(18,8)) AS Decimal2Column,
+			CAST(1 AS BIT) AS BooleanColumn,
+			CAST(N'<Test/>' AS XML) AS XmlColumn,
+			CAST('x' AS CHAR) AS SingleChar,
+			CAST(N'这是一个中文字符串' AS NVARCHAR(20)) AS UnicodeString,
+			NEWID() AS UUID,
+			CAST(NEWID() AS CHAR(36)) AS UUID2,
+			null AS ValueNull
+		 SELECT 'Hahaha' AS TextColumn`
 	*/
+	//tryExecuteNoneQuery(ctx, c)
+	//tryExecuteDataSet(ctx, c, sqlStatementDataSet)
+	tryExecuteScalar(ctx, c, sqlStatementForScalar)
 
-	//group.Wait()
 	log.Println("Done")
 }
 
@@ -178,15 +160,14 @@ func dumpDataSet(ds *proto.DataSet) {
 			log.Printf("  (Row[%d]):", j)
 			for k, cell := range row.GetValues() {
 				column := table.Columns[k]
-				rawValue := cell.GetValue() // []byte
+				//rawValue := cell.GetValue() // []byte
 				valueType := column.GetType()
 				decodedValue := table.Decode(cell)
-				log.Printf("    Cell[%d]:\tDBType: [%s] \tType: [%s] \tDecoded Value: [%v] RawValue:%v",
+				log.Printf("    Cell[%d]:\tDBType: [%s] \tType: [%s] \tDecoded Value: [%v]",
 					k,
 					column.DbType,
 					valueType,
-					decodedValue,
-					rawValue)
+					decodedValue)
 			}
 		}
 	}

@@ -119,7 +119,14 @@ func (e *DataExecutor) ExecuteSalar(req *proto.DBRequest) (*proto.DBScalarValue,
 	if errScan != nil {
 		return nil, errScan
 	}
-	sv.Value = proto.Serialize(values[0])
+
+	decodedValue, newType, err := proto.DecodeDBValueIfNeccessary(sv.DbType, sv.Type, values[0])
+	if err != nil {
+		return nil, err
+	}
+
+	sv.Type = newType
+	sv.Value = proto.Serialize(decodedValue)
 
 	return sv, nil
 }
