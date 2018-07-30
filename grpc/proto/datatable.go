@@ -6,6 +6,7 @@ func (table *DataTable) AddRow(rowValues []interface{}) {
 		Values: make([]*DBValue, len(rowValues)),
 	}
 	for idx, value := range rowValues {
+		//column := table.Columns[idx]
 		row.Values[idx] = &DBValue{
 			Index: int32(idx),
 			Value: Serialize(value),

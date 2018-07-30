@@ -45,6 +45,7 @@ func main() {
 		CAST('x' AS CHAR) AS SingleChar,		
 		CAST(N'这是一个中文字符串' AS NVARCHAR(20)) AS UnicodeString,
 		NEWID() AS UUID,
+		CAST(NEWID() AS CHAR(36)) AS UUID2,
 		null AS ValueNull 
 	 SELECT 'Hahaha' AS TextColumn`
 

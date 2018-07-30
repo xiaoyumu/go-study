@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Kelindar/binary"
+	mssql "github.com/denisenkom/go-mssqldb"
 	"github.com/xiaoyumu/go-study/grpc/common"
 )
 
@@ -13,6 +14,7 @@ func Serialize(value interface{}) []byte {
 	if value == nil {
 		return nil
 	}
+
 	bytes, err := binary.Marshal(value)
 	if err != nil {
 		return nil
@@ -45,6 +47,14 @@ func decodeDecimal(valueType string, value []byte) interface{} {
 	}
 }
 
+func decodeUniqueIdentifier(value interface{}) string {
+	var uuid mssql.UniqueIdentifier
+
+	uuid.Scan(value)
+
+	return uuid.String()
+}
+
 // DecodeValue converts binary serialized value ([]byte) back to typed value in interface{}
 // according to the given dbType and valueType.
 func DecodeValue(dbType string, valueType string, value []byte) interface{} {
@@ -53,7 +63,6 @@ func DecodeValue(dbType string, valueType string, value []byte) interface{} {
 	}
 
 	if dbType == "DECIMAL" {
-
 		return decodeDecimal(valueType, value)
 	}
 
