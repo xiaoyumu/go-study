@@ -71,5 +71,6 @@ func (c *SQLConnection) Open() error {
 }
 
 func (c *SQLConnection) Close() error {
+
 	return nil
 }
