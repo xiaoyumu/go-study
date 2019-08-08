@@ -41,7 +41,7 @@ RUN curl -Lk -o debian.list ${LCOAL_SRC_STORE}/debian-10-ustc.list && \
        # pkg-config \   These packages are already the latest version in golang:1.12.7-buster
        apt-utils \
        upx-ucl \
-       zip \
+       zip unzip \
        libmagick++-dev && \
     # Install support libraries for librdkafka
     apt-get install -y --no-install-recommends \
@@ -70,7 +70,7 @@ RUN curl -Lk -o /root/zeromq-${ZMQ_VERSION}.tar.gz ${LCOAL_SRC_STORE}/zeromq-${Z
     tar -xzf /root/zeromq-${ZMQ_VERSION}.tar.gz -C /root && \
     cd /root/zeromq-${ZMQ_VERSION} && \
     ./configure && \
-    make check && \
+    make && \
     make install && \
     rm -f /root/zeromq-${ZMQ_VERSION}.tar.gz
 
@@ -78,7 +78,7 @@ RUN curl -Lk -o /root/czmq-${CZMQ_VERSION}.tar.gz ${LCOAL_SRC_STORE}/czmq-${CZMQ
     tar -xzf /root/czmq-${CZMQ_VERSION}.tar.gz -C /root && \
     cd /root/czmq-${CZMQ_VERSION} && \
     ./configure --with-libsodium && \
-    make check && \
+    make && \
     make install && \
     ldconfig && \
     rm -f /root/czmq-${CZMQ_VERSION}.tar.gz
@@ -91,15 +91,21 @@ RUN curl -Lk -o /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz ${LCOAL_SRC_STORE}
     make && \
     make install && \
     rm -f /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz
+    
+RUN curl -Lk -s -o net-master.zip http://gitlab.fshome.net/go/dependencies/raw/master/net-master.zip && \
+  curl -Lk -s -o crypto-master.zip http://gitlab.fshome.net/go/dependencies/raw/master/crypto-master.zip && \
+  curl -Lk -s -o text-master.zip http://gitlab.fshome.net/go/dependencies/raw/master/text-master.zip && \
+  curl -Lk -s -o sys-master.zip http://gitlab.fshome.net/go/dependencies/raw/master/sys-master.zip && \
+  unzip -q net-master.zip && \
+  unzip -q crypto-master.zip && \
+  unzip -q text-master.zip && \
+  unzip -q sys-master.zip && \
+  mkdir -p $GOPATH/src/golang.org/x && \
+  mv ./net-master $GOPATH/src/golang.org/x/net -f && \
+  mv ./crypto-master $GOPATH/src/golang.org/x/crypto -f && \
+  mv ./text-master $GOPATH/src/golang.org/x/text -f && \
+  mv ./sys-master $GOPATH/src/golang.org/x/sys -f && \
+  rm *.zip
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
-
-RUN mkdir -p $GOPATH/src/golang.org/x && \
-    cd $GOPATH/src/golang.org/x && \
-    git clone https://go.googlesource.com/sys && \
-    git clone https://go.googlesource.com/crypto && \
-    git clone https://go.googlesource.com/net && \
-    git clone https://go.googlesource.com/text
-
-
