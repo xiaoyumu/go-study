@@ -7,14 +7,22 @@ ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG GO_PROXY
 ARG GO_MODULE
+ARG SRC_STORE
 
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV http_proxy $HTTP_PROXY
 ENV https_proxy $HTTPS_PROXY
 ENV no_proxy *.fshome.net
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # Turn on module mode, refer to 'go help modules' for more details
 ENV GOPROXY ${GO_PROXY:-https://mirrors.aliyun.com/goproxy/}
+
+ENV LCOAL_SRC_STORE ${SRC_STORE:-http://gitlab.fshome.net/go/dependencies/raw/master/}
+ENV ZMQ_VERSION 4.3.2
+ENV CZMQ_VERSION 4.2.0
+ENV LIBRDKAFKA_VERSION 1.1.0
 
 # Avaliable value is off, on and auto (default is off)
 ENV GO111MODULE ${GO_MODULE:-off}
@@ -22,15 +30,16 @@ ENV GO111MODULE ${GO_MODULE:-off}
 ENV GOLANG_VERSION 1.12.7
 
 # Install build tools
-RUN curl -o debian-10-buster-aliyun.list http://gitlab.fshome.net/linux-repo/debian-10-buster-aliyun.list && \
+RUN curl -Lk -o debian.list ${LCOAL_SRC_STORE}/debian-10-ustc.list && \
     mv /etc/apt/sources.list /etc/apt/sources.list.backup && \
-    mv debian-10-buster-aliyun.list /etc/apt/sources.list && \
+    mv debian.list /etc/apt/sources.list && \
     apt-get update && apt-get install -y --no-install-recommends \
        # g++ \
        # gcc \
        # libc6-dev \
        # make \
        # pkg-config \   These packages are already the latest version in golang:1.12.7-buster
+       apt-utils \
        upx-ucl \
        zip \
        libmagick++-dev && \
@@ -46,16 +55,18 @@ RUN curl -o debian-10-buster-aliyun.list http://gitlab.fshome.net/linux-repo/deb
     # Install support libraries for ZeroMQ
     apt-get install -y --no-install-recommends \
       libsodium-dev \
-      libsodium23
+      libsodium23 \
+      libunwind-dev \
+      libunwind8 && \
      # libzmq5-dev \
      # libzmq5 
      # libczmq-dev \
      # libczmq4
+    apt-get clean
 
 RUN rm -rf /var/lib/apt/lists/*
 
-ENV ZMQ_VERSION 4.3.2
-RUN curl -Lk -o /root/zeromq-${ZMQ_VERSION}.tar.gz http://gitlab.fshome.net/static/zeromq-${ZMQ_VERSION}.tar.gz && \
+RUN curl -Lk -o /root/zeromq-${ZMQ_VERSION}.tar.gz ${LCOAL_SRC_STORE}/zeromq-${ZMQ_VERSION}.tar.gz && \
     tar -xzf /root/zeromq-${ZMQ_VERSION}.tar.gz -C /root && \
     cd /root/zeromq-${ZMQ_VERSION} && \
     ./configure && \
@@ -63,8 +74,7 @@ RUN curl -Lk -o /root/zeromq-${ZMQ_VERSION}.tar.gz http://gitlab.fshome.net/stat
     make install && \
     rm -f /root/zeromq-${ZMQ_VERSION}.tar.gz
 
-ENV CZMQ_VERSION 4.2.0
-RUN curl -Lk -o /root/czmq-${CZMQ_VERSION}.tar.gz http://gitlab.fshome.net/static/czmq-${CZMQ_VERSION}.tar.gz && \
+RUN curl -Lk -o /root/czmq-${CZMQ_VERSION}.tar.gz ${LCOAL_SRC_STORE}/czmq-${CZMQ_VERSION}.tar.gz && \
     tar -xzf /root/czmq-${CZMQ_VERSION}.tar.gz -C /root && \
     cd /root/czmq-${CZMQ_VERSION} && \
     ./configure --with-libsodium && \
@@ -73,9 +83,8 @@ RUN curl -Lk -o /root/czmq-${CZMQ_VERSION}.tar.gz http://gitlab.fshome.net/stati
     ldconfig && \
     rm -f /root/czmq-${CZMQ_VERSION}.tar.gz
 
-ENV LIBRDKAFKA_VERSION 1.1.0
 # Compile librdkafka from source
-RUN curl -Lk -o /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz http://gitlab.fshome.net/static/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz && \
+RUN curl -Lk -o /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz ${LCOAL_SRC_STORE}/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz && \
     tar -xzf /root/librdkafka-${LIBRDKAFKA_VERSION}.tar.gz -C /root && \
     cd /root/librdkafka-${LIBRDKAFKA_VERSION} && \
     ./configure && \
@@ -92,6 +101,5 @@ RUN mkdir -p $GOPATH/src/golang.org/x && \
     git clone https://go.googlesource.com/crypto && \
     git clone https://go.googlesource.com/net && \
     git clone https://go.googlesource.com/text
-
 
 
