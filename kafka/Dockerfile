@@ -1,4 +1,4 @@
-FROM docker.neg/dfis/golang:1.12.7-buster
+FROM hub.fshome.net/gplang/golang:1.12.7-buster
 # Change the base image for your build
 
 MAINTAINER Genesis
@@ -14,7 +14,7 @@ ENV http_proxy $HTTP_PROXY
 ENV https_proxy $HTTPS_PROXY
 ENV no_proxy *.fshome.net
 
-ENV RESOURCE_DEPOT ${RESOURCE_SVR:-http://fshome.net:8777}
+ENV RESOURCE_DEPOT ${RESOURCE_SVR:-http://gitlab.fshome.net:8777}
 
 # Turn on module mode, refer to 'go help modules' for more details
 ENV GOPROXY ${GO_PROXY:-https://mirrors.aliyun.com/goproxy/}
