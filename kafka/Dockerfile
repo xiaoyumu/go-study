@@ -12,9 +12,9 @@ ARG RESOURCE_SVR
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV http_proxy $HTTP_PROXY
 ENV https_proxy $HTTPS_PROXY
-ENV no_proxy git.newegg.org,st01nbx01
+ENV no_proxy *.fshome.net
 
-ENV RESOURCE_DEPOT ${RESOURCE_SVR:-http://st01nbx01:8777}
+ENV RESOURCE_DEPOT ${RESOURCE_SVR:-http://fshome.net:8777}
 
 # Turn on module mode, refer to 'go help modules' for more details
 ENV GOPROXY ${GO_PROXY:-https://mirrors.aliyun.com/goproxy/}
